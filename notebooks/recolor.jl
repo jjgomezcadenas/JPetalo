@@ -13,6 +13,9 @@ macro bind(def, element)
     end
 end
 
+# ╔═╡ d16a3879-acb4-4cce-9b87-faadf4abfece
+import Pkg; Pkg.add.(["HTTP"])
+
 # ╔═╡ 3207f446-8643-11eb-37ba-c9aec47fcb8f
 begin
 	using Markdown
@@ -27,6 +30,7 @@ begin
 	using Statistics
 	using StatsPlots
 	using LinearAlgebra
+	using HTTP
 	#import Pandas
 end
 
@@ -52,8 +56,8 @@ md"# RECO LOR
 - Reconstructs the two gammas in the event and draws the Line Of Response (LOR)
 "
 
-# ╔═╡ d16a3879-acb4-4cce-9b87-faadf4abfece
-#import Pkg; Pkg.add.(["Markdown", "Pandas","LazySets"])
+# ╔═╡ 4ee98da9-f3ce-4782-9538-f878f27ed9f7
+
 
 # ╔═╡ 68e738e7-88bd-41c2-89e4-594f07d64ddc
 function ingredients(path::String)
@@ -94,12 +98,20 @@ md"# Notebook"
 # ╔═╡ edbcd276-6e0d-41f3-91d8-131b0fc7486b
 md"### Read Petalo DB"
 
-# ╔═╡ 832c369b-13dd-4003-9381-36c301b5a8de
-begin
+# ╔═╡ bb32afef-b829-4222-bd12-0372cafa2ccb
+@bind option Select(["readFromWeb", "readFromFile"])
+
+# ╔═╡ 61845b04-e1b4-4cdb-be9b-9ee9ec53bb69
+if option == "readFromWeb"
+	res = HTTP.get("http://next.ific.uv.es/icgallery/public/PETALO/petalodb.csv")
+	fdf = CSV.File(res.body)
+else
 	dbpath  = datadir("db/petalodb.csv")
 	fdf     = CSV.File(dbpath)
-	pdb = DataFrame(fdf)[!,2:5]
 end
+
+# ╔═╡ 832c369b-13dd-4003-9381-36c301b5a8de
+pdb = DataFrame(fdf)[!,2:5]
 
 # ╔═╡ 8db332bb-9a40-4bdf-b018-64f6a35f6bdf
 md"- The scatter plot shows that the positions of the SiPMs form a ring" 
@@ -116,12 +128,17 @@ scatter(pdb.X, pdb.Z, title = "XZ positions SiPMs", leg=false)
 # ╔═╡ 4178e1b4-b073-40eb-bda6-c11ecf2b8073
 md" ### Read data file"
 
-# ╔═╡ 74e6fc15-9e9f-460f-89ad-f36956b91ae9
-begin
+# ╔═╡ c661c09e-2b68-4bf5-9793-5f2cbb31c025
+if option == "readFromWeb"
+	res2 = HTTP.get("http://next.ific.uv.es/icgallery/public/PETALO/full_body_phantom_paper.19.h5.csv")
+	fbpdf = CSV.File(res2.body)
+else
 	fbp = datadir("fbpet/full_body_phantom_paper.19.h5.csv")
 	fbpdf     = CSV.File(fbp)
-	snsr = DataFrame(fbpdf)[!,2:end]
 end
+
+# ╔═╡ 74e6fc15-9e9f-460f-89ad-f36956b91ae9
+snsr = DataFrame(fbpdf)[!,2:end]
 
 # ╔═╡ 766c0b57-9a16-44d1-ab5f-e7c1d39a5176
 md"- Each data file is indexed by event\_id and sensor\_id. The field sensor_id is used to extract the positions of the sipms in the DB and also provides the charge for a given time bin. This analysis is not considering time (in fact the data is binned with very large data bins, which in practice are irrelevant). Time analysis is illustrated in another notebook"
@@ -571,6 +588,7 @@ plot(sxy,syz,sxz, layout = (1, 3), legend = false,  fmt = :png)
 # ╔═╡ Cell order:
 # ╠═79cfd2fc-9046-11eb-2b13-1b877d57645d
 # ╠═d16a3879-acb4-4cce-9b87-faadf4abfece
+# ╠═4ee98da9-f3ce-4782-9538-f878f27ed9f7
 # ╠═3207f446-8643-11eb-37ba-c9aec47fcb8f
 # ╠═5115917a-8644-11eb-19fc-0528741ca75d
 # ╠═fc8b79a2-8728-11eb-2da7-e3ffa3ceef08
@@ -583,17 +601,20 @@ plot(sxy,syz,sxz, layout = (1, 3), legend = false,  fmt = :png)
 # ╠═0b1cedc7-8ada-45a5-adef-fbae794dee3e
 # ╟─80542fd1-843e-4d78-9bd3-169c1d6a9672
 # ╟─edbcd276-6e0d-41f3-91d8-131b0fc7486b
+# ╟─bb32afef-b829-4222-bd12-0372cafa2ccb
+# ╠═61845b04-e1b4-4cdb-be9b-9ee9ec53bb69
 # ╠═832c369b-13dd-4003-9381-36c301b5a8de
 # ╟─8db332bb-9a40-4bdf-b018-64f6a35f6bdf
 # ╠═b8aacd81-9d8f-4105-a214-220be62b3e43
 # ╟─c0cb1786-d693-42da-b8ca-a2ca4e32cc69
 # ╠═42e1caa1-4aba-44e7-ab32-4538662bcf29
 # ╟─4178e1b4-b073-40eb-bda6-c11ecf2b8073
+# ╠═c661c09e-2b68-4bf5-9793-5f2cbb31c025
 # ╠═74e6fc15-9e9f-460f-89ad-f36956b91ae9
 # ╟─766c0b57-9a16-44d1-ab5f-e7c1d39a5176
 # ╟─48a21c9c-cfc3-4d23-b1d9-cb9e47753bb4
-# ╟─8a6c603d-a33b-440b-b5bd-9b7bef37b2b5
-# ╟─f3b71ecf-fa44-480d-bb7d-612edc6ff15e
+# ╠═8a6c603d-a33b-440b-b5bd-9b7bef37b2b5
+# ╠═f3b71ecf-fa44-480d-bb7d-612edc6ff15e
 # ╟─7418aa1c-cc4d-47cc-a132-26f01c0aa761
 # ╠═4c6aa884-e7f2-4923-84f9-e78869670e1e
 # ╠═9e48d056-0f4e-4e5b-9a8d-3d0e365a798a

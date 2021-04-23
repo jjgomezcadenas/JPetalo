@@ -92,6 +92,10 @@ srcdir()
 # ╔═╡ 0b1cedc7-8ada-45a5-adef-fbae794dee3e
 markercolors = [:green :orange :black :purple :red  :yellow :brown :white]
 
+# ╔═╡ 5fb08873-1ca6-44f2-b68a-438fea6007ed
+gr(size=(700,700), xtickfontsize=12, ytickfontsize=12, xguidefontsize=14, yguidefontsize=14, legendfontsize=10, dpi=100, grid=(:y, :gray, :solid, 2, 0.4));
+
+
 # ╔═╡ 80542fd1-843e-4d78-9bd3-169c1d6a9672
 md"# Notebook"
 
@@ -599,6 +603,7 @@ plot(sxy,syz,sxz, layout = (1, 3), legend = false,  fmt = :png)
 # ╠═9b853f27-4288-42a6-8f12-ca004e1773b7
 # ╠═cf89b973-7b0f-483d-8ce9-ba426f1df2a6
 # ╠═0b1cedc7-8ada-45a5-adef-fbae794dee3e
+# ╠═5fb08873-1ca6-44f2-b68a-438fea6007ed
 # ╟─80542fd1-843e-4d78-9bd3-169c1d6a9672
 # ╟─edbcd276-6e0d-41f3-91d8-131b0fc7486b
 # ╟─bb32afef-b829-4222-bd12-0372cafa2ccb

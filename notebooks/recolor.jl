@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.2
+# v0.14.4
 
 using Markdown
 using InteractiveUtils
@@ -176,6 +176,9 @@ md"- Histogramming the energy of the SiPMs one can see a large peak at 1 pes. Th
 
 # ╔═╡ 5a7d478a-9a79-415d-b99f-d0c548cebeb7
 md" - ecut =$ecut pes (can be changed using window)"
+
+# ╔═╡ 493721a5-7875-48a0-bc46-735021caa292
+
 
 # ╔═╡ b7625433-4509-422b-9cdd-83b9984f43da
 md"- Repeating the plots ater cut at $ecut pes shows a much cleaner distribution"
@@ -422,6 +425,9 @@ evt = select_event(snsr, evt0)
 # ╔═╡ 9e48d056-0f4e-4e5b-9a8d-3d0e365a798a
 sids = evt[!,:sensor_id]
 
+# ╔═╡ aa9584a3-9d41-493a-b4a6-0862e3354f80
+evt.charge
+
 # ╔═╡ 4be9f445-e372-4999-a4cb-67565559b6b5
 evtQ1 = evt[evt.charge.>ecut,:]
 
@@ -455,8 +461,11 @@ end
 # ╔═╡ 6feca4b1-9af3-481c-9559-74b604513b07
 hitdf = sipm_xyzq(evt, pdb)
 
+# ╔═╡ df6aaf5c-5cd8-4d2f-a4a1-f367c4164c5b
+length(hitdf.q)
+
 # ╔═╡ db157d7e-70e5-4d20-8fab-92454b5c2e09
-@test hitdf.q ≈ evt.charge
+@test hitdf.q == evt.charge
 
 # ╔═╡ 90777a77-4523-4496-a21f-42338f7e3079
 histogram(hitdf.q[hitdf.q.<10], bins=30)
@@ -625,6 +634,8 @@ plot(sxy,syz,sxz, layout = (1, 3), legend = false,  fmt = :png)
 # ╠═9e48d056-0f4e-4e5b-9a8d-3d0e365a798a
 # ╟─ac738ea2-d2fd-4f0b-9b97-dc1745cb8e22
 # ╠═6feca4b1-9af3-481c-9559-74b604513b07
+# ╠═df6aaf5c-5cd8-4d2f-a4a1-f367c4164c5b
+# ╠═aa9584a3-9d41-493a-b4a6-0862e3354f80
 # ╠═db157d7e-70e5-4d20-8fab-92454b5c2e09
 # ╟─c471cec7-a1cb-4ffe-ac01-8eaf11e2ed1e
 # ╠═7019b621-6ef5-46e8-abb2-f748f005201d
@@ -635,6 +646,7 @@ plot(sxy,syz,sxz, layout = (1, 3), legend = false,  fmt = :png)
 # ╟─0d8a7dd5-6529-4d0d-a61b-31893cf92262
 # ╟─5a7d478a-9a79-415d-b99f-d0c548cebeb7
 # ╠═4be9f445-e372-4999-a4cb-67565559b6b5
+# ╠═493721a5-7875-48a0-bc46-735021caa292
 # ╠═785cd6a8-fd02-4624-b0e8-b487d3186800
 # ╟─b7625433-4509-422b-9cdd-83b9984f43da
 # ╠═9f59a9cc-b963-4bd2-b479-e3cdbaa53d8f

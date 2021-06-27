@@ -238,7 +238,7 @@ th1.event_id
 th2.event_id
 
 # ╔═╡ 9963d767-a54b-40db-ba6a-a3d64f6dcbd7
-pxyqt,pxyt,pxzt,pyzt = jp.JPetalo.plot_truehits(th1, th2, 51.1);
+pxyqt,pxyt,pxzt,pyzt = jp.JPetalo.plot_truehits(th1, th2, 101.1);
 
 # ╔═╡ df6d7369-88ae-4536-b66c-369d56291bce
 plot(pxyqt)
@@ -339,439 +339,6 @@ hitQdf = jp.JPetalo.sipm_xyzq(evtQ1, pdf.sensor_xyz)
 # ╔═╡ 5500660e-d169-4fa4-b53f-c32dfdb0e15a
 histogram(hitQdf.q, bins=30)
 
-# ╔═╡ 0e880066-fc28-4fde-97e2-3b4e64f1d5b3
-size(hitQdf)
-
-# ╔═╡ 0c74c3cc-bcc0-4da8-ad7d-fc00e4cb5c20
-function ksipmsel(hdf::DataFrame, ka)
-	return hdf[(ka.==2), :], hdf[(ka.==1), :]
-end
-
-# ╔═╡ b7625433-4509-422b-9cdd-83b9984f43da
-md"- Repeating the plots ater cut at $ecut pes shows a much cleaner distribution"
-
-# ╔═╡ 8e882ad9-2a98-438b-883f-6141c67375cb
-pxyqQ1,pxyQ1,pxzQ1,pyzQ1 = jp.JPetalo.plot_xyzq(hitQdf, 100.);
-
-# ╔═╡ dd577b58-33ff-4852-81c2-1d53918234f9
-plot(pxyqQ1,pxyQ1,pxzQ1,pyzQ1, layout = (2, 2), aspect_ratio=:equal,size = (1400, 1000), legend = false,  fmt = :png)
-
-# ╔═╡ 35132119-c793-4bfe-b228-7a017ce7789d
-md"- We can now select the hits with positive and negative phi, which define the clusters of the gammas"
-
-# ╔═╡ 2af988f3-4754-4de8-833b-a5bc57f0381d
-hqpdf, hqndf = jp.JPetalo.sipmsel(hitQdf);
-
-# ╔═╡ da5306f6-9bea-4cc3-9bf9-767b0908fb69
-md"- And compute the baricenters, which define the gamma position"
-
-# ╔═╡ 7f277fff-efaa-4502-8a58-45c4d4a514f5
-bp = jp.JPetalo.baricenter(hqpdf)
-
-# ╔═╡ dbd61080-79d6-4e64-8a87-a1ed243ff503
-bn = jp.JPetalo.baricenter(hqndf)
-
-# ╔═╡ 75c15d2b-c314-493a-a773-cdffc61b43f2
-C=transpose([bp.x bp.y bp.z; bn.x bn.y bn.z])
-
-# ╔═╡ 72b3c6a8-cd90-40de-b1b0-2907588ecc92
-md"- Finally we can draw the three proyections of the baricenter, together with the LORs that connect them"
-
-# ╔═╡ 9a07dac6-f038-429c-a51a-a4237532fe82
-sxy, syz, sxz = jp.JPetalo.plot_barycenter(bp,bn, pxyQ1,pxzQ1,pyzQ1, 0.1);
-
-# ╔═╡ e7eda113-32ad-47b9-8a74-10f759165e16
-plot(sxy,syz,sxz, layout = (1, 3), aspect_ratio=:equal,size = (1400, 1000),legend = false,  fmt = :png)
-
-# ╔═╡ 7941d91e-9807-48b7-b454-f8f192a2695c
-md"## Reconstruction of LORS"
-
-# ╔═╡ d9aeb478-23a5-4b5d-a993-873223cbd224
-typeof(pdf)
-
-# ╔═╡ d0193465-d2f0-4232-994d-4f3a435ed42b
-typeof(th1)
-
-# ╔═╡ 081194bf-31a5-47fb-8fe2-79c2e54ae88b
-typeof(ecut)
-
-# ╔═╡ 7cfe5f8e-c951-49d0-89d7-7211c24c2f21
-typeof(th1.event_id)
-
-# ╔═╡ f8e5dd82-0a49-4d84-8a29-3cb221fce0a5
-QM, BP, BN, rBP, rBN = jp.JPetalo.reco_lor(pdf, th1.event_id, ecut)
-
-# ╔═╡ 83ebaade-d34f-4631-a2a3-3e1012113d59
-
-
-# ╔═╡ 54743f18-0f96-415f-a821-9743b33953be
-histogram(QM, bins=200, xlim=[10.,1500.])
-
-# ╔═╡ ae9283ae-fa33-4057-beb8-b49416ea90bb
-minimum(QM)
-
-# ╔═╡ 521b5044-6492-468b-8e49-57fd196e40d9
-BP
-
-# ╔═╡ 7e933768-d917-4daa-9857-c4b1e72fd0c4
-size(BP)
-
-# ╔═╡ 83ed2f0e-3e88-42fe-91f6-a51a21881d8b
-rBP
-
-# ╔═╡ ec1aab0e-fb78-42af-b1f4-e41ce9e19389
-function plot_lors_barycenter(BP, BN, qmax=51.1)
-	
-	function plot_xy(BP,BN)
-		h1 = BP[1]
-		h2 = BN[1]
-
-		pxy  = scatter([h1.x,h2.x], [h1.y,h2.y], marker_z = [h1.q,h2.q],
-		               markersize = [h1.q/qmax, h2.q/qmax],
-			           color = :jet, legend=false)
-
-		lsxy = LineSegment([h1.x,h1.y],[h2.x,h2.y])
-		sxy  = plot!(pxy,lsxy)
-		
-		for i in 2:size(BP)[1]
-			h1 = BP[i]
-			h2 = BN[i]
-		
-			pxy = scatter!(pxy, [h1.x,h2.x], [h1.y,h2.y], marker_z = [h1.q,h2.q],
-		     	          markersize = [h1.q/qmax, h2.q/qmax],
-			     	      color = :jet, legend=false)
-		
-	    	lsxy = LineSegment([h1.x,h1.y],[h2.x,h2.y])
-		
-	    	sxy = plot!(pxy,lsxy)
-		end	
-		return sxy
-	end
-
-	function plot_xz(BP,BN)
-		h1 = BP[1]
-		h2 = BN[1]
-
-		pxz  = scatter([h1.x,h2.x], [h1.z,h2.z], marker_z = [h1.q,h2.q],
-		               markersize = [h1.q/qmax, h2.q/qmax],
-			           color = :jet, legend=false)
-
-		lsxz = LineSegment([h1.x,h1.z],[h2.x,h2.z])
-		sxz  = plot!(pxz,lsxz)
-		
-		for i in 2:size(BP)[1]
-			h1 = BP[i]
-			h2 = BN[i]
-		
-			pxz = scatter!(pxz, [h1.x,h2.x], [h1.z,h2.z], marker_z = [h1.q,h2.q],
-		     	          markersize = [h1.q/qmax, h2.q/qmax],
-			     	      color = :jet, legend=false)
-		
-	    	lsxz = LineSegment([h1.x,h1.z],[h2.x,h2.z])
-		
-	    	sxz = plot!(pxz,lsxz)
-		end	
-		return sxz
-	end
-
-	function plot_yz(BP,BN)
-		h1 = BP[1]
-		h2 = BN[1]
-
-		pyz  = scatter([h1.y,h2.y], [h1.z,h2.z], marker_z = [h1.q,h2.q],
-		               markersize = [h1.q/qmax, h2.q/qmax],
-			           color = :jet, legend=false)
-
-		lsyz = LineSegment([h1.y,h1.z],[h2.y,h2.z])
-		syz  = plot!(pyz,lsyz)
-		
-		for i in 2:size(BP)[1]
-			h1 = BP[i]
-			h2 = BN[i]
-		
-			pyz = scatter!(pyz, [h1.y,h2.y], [h1.z,h2.z], marker_z = [h1.q,h2.q],
-		     	          markersize = [h1.q/qmax, h2.q/qmax],
-			     	      color = :jet, legend=false)
-		
-	    	lsyz = LineSegment([h1.y,h1.z],[h2.y,h2.z])
-		
-	    	syz = plot!(pyz,lsyz)
-		end	
-		return syz
-	end
-
-
-	sxy = plot_xy(BP,BN)
-	xlabel!("x")
-	ylabel!("y")
-
-	sxz = plot_xz(BP,BN)
-	xlabel!("x")
-	ylabel!("z")
-
-	syz = plot_yz(BP,BN)
-	xlabel!("y")
-	ylabel!("z")
-
-	return sxy, sxz, syz
-end
-
-# ╔═╡ a2c0da22-3df5-4b92-9f1d-562c4b5c1087
-bsxy, bsxz, bsyz = jp.JPetalo.plot_lors_barycenter(BP, BN, 1500.) 
-
-# ╔═╡ 60e090f2-b35d-4333-9464-6a9d9ac0084d
-rsxy, rsxz, rsyz = jp.JPetalo.plot_lors_barycenter(rBP, rBN, 1500.) 
-
-# ╔═╡ 8e51931c-cd9e-4056-816e-9a8e7a1f59a8
-plot(bsxy, rsxy, layout= (1, 2), aspect_ratio=:equal,size = (1400, 1000),legend = false,  fmt = :png)
-
-# ╔═╡ edc1f1e2-9d55-4c00-a2af-08571c7f38ab
-plot(bsxz, rsxz, layout = (2, 1),  aspect_ratio=:equal, size = (1600, 800), ylim=(-100.,100.), legend = false,  fmt = :png)
-
-# ╔═╡ 382f01d9-6041-47ac-8ed6-b6cd1ea092c4
-plot(bsyz, rsyz, layout = (2, 1),  aspect_ratio=:equal, size = (1600, 800), ylim=(-100.,100.), legend = false,  fmt = :png)
-
-# ╔═╡ 71acb562-bcfd-40e7-a3b9-dcffe00cd557
-plot(bsxy, rsxy, layout= (1, 2), aspect_ratio=:equal,size = (1400, 1000),legend = false,  fmt = :png)
-
-# ╔═╡ 91ed4b00-54a4-4345-8212-ed25c27fe3aa
-plot(ptsxy, bsxy, layout= (1, 2), aspect_ratio=:equal,size = (1400, 1000),legend = false,  fmt = :png)
-
-# ╔═╡ 4ce431ab-aac3-40c5-a15a-890d46d4b501
-plot(ptsxz, bsxz, layout= (2, 1), aspect_ratio=:equal, size = (1600, 800), ylim=(-100.,100.),legend = false,  fmt = :png)
-
-# ╔═╡ 256eb45e-88b2-41d3-8209-41e770bb9a11
-plot(ptsyz, bsyz, layout= (2, 1), aspect_ratio=:equal, size = (1600, 800), ylim=(-100.,100.),legend = false,  fmt = :png)
-
-# ╔═╡ 1709ae5d-b256-4ab6-8c16-5edaa354f867
-md"## Types"
-
-# ╔═╡ ccf11f8d-5bcb-40e1-8b6d-d88812c41f88
-md"""
-	struct Hit
-	x::Float64
-	y::Float64
-	z::Float64
-	q::Float64
-	
-
-Represent a (high level) SiPM hit
-"""
-
-# ╔═╡ 35d0f27d-0f97-401a-9a82-9e176cf62fa2
-struct Hit
-	x::Float64
-	y::Float64
-	z::Float64
-	q::Float64
-end
-
-# ╔═╡ 56b34074-ac36-476b-b3d9-9057fad68693
-md"# Functions"
-
-# ╔═╡ a124b244-f873-4847-b5de-a18b80975e80
-md"""
-	radius(x::Number, y::Number) = sqrt(x^2 + y^2)
-"""
-
-# ╔═╡ b7a9953e-4392-4762-a6f4-979d47426639
-begin
-	radius(x::Number, y::Number) = sqrt(x^2 + y^2)
-	radius(x::Float64, y::Float64) = sqrt(x^2 + y^2)
-end
-
-# ╔═╡ 567ca9fc-ce60-4b30-9246-07d999cd7654
-md"""
-	find_max_xy(df, xc, yc)
-
-Return ymax and x such that ymax = f(x).
-
-**Description:**
-
-In a DataFrame one has often "XY" variables, that is, a pair of columns
-"X" and "Y" which represent correlated variables (e.g intensity and wavelength).
-In such cases one often wants the XY maximum, that is, finding the maximum
-of "Y" (call it ymax) and the corresponding value in "X"
-(x for which y is ymax). This corresponds, for example, to the wavelength at
-which the intensity is maximal.
-
-
-**Arguments:**
-- `df::DataFrame`: data frame holding the data.
-- `xc::String`: the X column.
-- `yc::String`: the Y column.
-"""
-
-# ╔═╡ 12e87e3c-5521-4d94-b7f6-009abf5e96f1
-function find_max_xy(df::DataFrame, xc::String, yc::String)
-	ymax, imax = findmax(df[!, yc])
-	x_ymax = df[imax, xc]
-	return ymax, x_ymax
-end
-
-# ╔═╡ 6e112f16-c32c-491a-9b68-180a57aace8f
-find_max_xy(evt,"sensor_id", "charge")
-
-# ╔═╡ c91baad0-7c07-4b40-a99e-3c773b18b065
-scatter(evt.sensor_id, evt.charge, marker=:circle, leg=false)
-
-# ╔═╡ 982329e8-61df-4bb9-b5fa-82f5c50edafe
-function test_find_max_xy(evt)
-	qmax, iqmax = findmax(evt.charge)
-	simax = evt.sensor_id[iqmax]
-	qm, sim = find_max_xy(evt,"sensor_id", "charge")
-	return qm ≈ qmax && sim ≈ simax
-end
-
-# ╔═╡ 3f26bf3b-a006-4956-9674-09b157c247c9
-@test test_find_max_xy(evt)
-
-# ╔═╡ 300b1614-741d-4720-b2bc-01539423a163
-md"""
-	find_xyz_sipm_qmax(hitdf::DataFrame)
-Return the coordinates of the SiPM with maximum charge
-"""
-
-# ╔═╡ 3872788b-62a9-4733-8d88-b4af0e59c423
-function find_xyz_sipm_qmax(hitdf::DataFrame)
-	qxmax, xmax = find_max_xy(hitdf,"x", "q")
-	qymax, ymax = find_max_xy(hitdf,"y", "q")
-	qzmax, zmax = find_max_xy(hitdf,"z", "q")
-	return Hit(xmax,ymax,zmax,qxmax)
-end
-
-# ╔═╡ d09f2c56-4ac1-47b4-b5d2-534a4c7b5301
-function test_find_xyz_sipm_qmax(hitdf)
-	qxmax, xmax = find_max_xy(hitdf,"x", "q")
-	qymax, ymax = find_max_xy(hitdf,"y", "q")
-	qzmax, zmax = find_max_xy(hitdf,"z", "q")
-	@test qxmax ≈ qymax
-	@test qxmax ≈ qzmax
-end
-
-# ╔═╡ 44af890b-5d5b-4e57-b284-0a7729674466
-test_find_xyz_sipm_qmax(hitdf)
-
-# ╔═╡ 1cdcefbf-99e1-43b3-9587-b9b5bfee40c4
-md" - `simax` is the Hit with the coordinates and charge of the SiPM of max charge"
-
-# ╔═╡ e694f819-3099-4a90-9b44-e2151112941c
-simax = find_xyz_sipm_qmax(hitdf::DataFrame)
-
-# ╔═╡ 0a2569da-b161-428b-b092-722e01255971
-md"""
-	xyz_dot(hitdf::DataFrame, simax::Hit)
-Return the dot product between each SiPM in the event and the SiPM of max charge
-"""
-
-# ╔═╡ 735c6816-a7fc-457f-ae8b-95886fcc84bb
-function xyz_dot(hitdf::DataFrame, simax::Hit)
-	xyzmax = [simax.x, 	simax.y, simax.z]
-	xyzm_dot = dot(xyzmax, xyzmax)
-	return [dot(Array(hitdf[i,1:3]), xyzmax) /xyzm_dot  for i in 1:nrow(hitdf)]
-end
-
-# ╔═╡ 81685b61-d54e-4c6b-a087-c53a7d0f62e3
-md"Plot `xyz_dot` showing that the SiPM are distributed around zero and between -π/2 and π/2"
-
-# ╔═╡ 68847964-7edf-4dba-9cd0-2e9197fdf5a9
-npr = xyz_dot(hitdf, simax)
-
-# ╔═╡ bbe9358e-1d79-4bd2-b003-d49831e21cfc
-histogram(npr)
-
-# ╔═╡ 072d42e4-9924-4d2d-8302-c2cd34ec9ee3
-@test maximum(npr) < π/2
-
-# ╔═╡ 2c52dc80-04ca-48e3-acfc-3d6f63acb323
-@test minimum(npr) > -π/2 
-
-# ╔═╡ 8d38fc77-7801-42b6-91d4-d56e3f657f1b
-md"""
-	sipmsel(hdf::DataFrame)
-Return two data frames, separating the SiPMs in the phi angle relative to the SiPM of max charge. 
-"""
-
-# ╔═╡ c9111054-494c-4cc7-96cd-26d4c522da1b
-function sipmsel(hdf::DataFrame)
-	simax = find_xyz_sipm_qmax(hdf)
-	npr   = xyz_dot(hdf, simax)
-	mask =[n>0 ? true : false for n in npr]
-	return hdf[(npr.>0), :], hdf[(npr.<0), :]
-end
-
-# ╔═╡ 050e991d-707f-43c2-80cd-d8ce570ac360
-function fphi(hdf::DataFrame)
-	return atan.(hdf.y,hdf.x)
-end
-
-# ╔═╡ 33192e19-2a20-4a43-ba36-2a5d40d009cf
-hitp, hitn  = sipmsel(hitdf)
-
-# ╔═╡ 12044636-6967-424f-977f-c11e8df0b2e1
-scatter(fphi(hitdf), leg=false)
-
-# ╔═╡ 7f8dd559-5c77-4924-9eb9-dfb6eabbed09
-md"""
-	select_by_column_value(df::DataFrame, column::String, value)
-
-Select the elements of a dataframe in terms of value.
-"""
-
-# ╔═╡ 91e8eb43-3dde-4472-9cdf-07f86fde14a6
-function select_by_column_value(df::DataFrame, column::String, value)
-	mask = df[!,column].==value
-	return df[mask,:]
-end
-
-# ╔═╡ 459e546d-825a-431e-a676-874a9bb926c4
-md"""
-	select_by_index(df::DataFrame, column::String, value::Int64)
-
-Select the elements of a dataframe in terms of an index
-"""
-
-# ╔═╡ c925cb36-358b-4e4a-82a8-11f06d162a11
-select_by_index(df::DataFrame, column::String, value::Int64) = select_by_column_value(df::DataFrame, column::String, value)
-
-# ╔═╡ 3ae4d41f-624a-4f24-8d1f-d531ada29407
-md"- We can test that the positions of the sipms corresponding to a given index are correctly obtained"
-
-# ╔═╡ 0b7a4788-9979-465b-bf23-b25f9ffc89f6
-select_by_index(pdb, "SensorID", 1000)
-
-# ╔═╡ daf2a651-519d-4861-865c-ca696ec4f419
-md"""
-	sipm_pos(dbdf::DataFrame, index::Int64)
-Take the sipm database and the index of a sipm and returns its position
-"""
-
-# ╔═╡ 0e32b95a-587f-4f30-9f47-49db52fedf9e
-function sipm_pos(dbdf::DataFrame, index::Int64)
-	return Array(select_by_index(dbdf, "SensorID", index)[1,2:end])
-end
-
-# ╔═╡ ba09133d-9fd7-43b9-b18b-2be8e95bc56e
-@test sipm_pos(pdb, 1000) ≈ Array(select_by_index(pdb, "SensorID", 1000)[1,2:end])
-
-# ╔═╡ 16c3f02f-7ce8-4664-881b-9a93dfd18f54
-md"- Example: Function applied over an index"
-
-# ╔═╡ 4ca52cab-b70e-4f56-970a-be78fef81a27
-x1,y1, z1 = sipm_pos(pdb, 77194)
-
-# ╔═╡ 708c295b-5fb3-4e45-8674-389356576139
-md"- Function applied over all indexes"
-
-# ╔═╡ 86a68e86-8ad1-4c09-8bd7-178106d35cf3
-begin
-	XYZ = sipm_pos.((pdb,), pdb.SensorID)
-	x = [XYZ[i][1] for i in 1:length(XYZ)]
-	y = [XYZ[i][2] for i in 1:length(XYZ)]
-	z = [XYZ[i][3] for i in 1:length(XYZ)]
-	r = radius.(x, y)
-end
-
 # ╔═╡ 5c4f390d-7224-49db-b16d-2fd3339bd47b
 function get_hits_as_matrix(hitdf)
 	f = @formula(0 ~ x + y + z)
@@ -802,14 +369,46 @@ size(ka)
 # ╔═╡ 88639225-8441-4f21-851b-9b75a783b1ce
 typeof(ka)
 
+# ╔═╡ 0e880066-fc28-4fde-97e2-3b4e64f1d5b3
+size(hitQdf)
+
 # ╔═╡ 6090917b-50f2-452f-9fbd-deea914d3de6
 kc
 
 # ╔═╡ 4a0d90d7-3a97-46ce-926e-f906459108ad
 kc[1] + kc[2]
 
+# ╔═╡ 0c74c3cc-bcc0-4da8-ad7d-fc00e4cb5c20
+function ksipmsel(hdf::DataFrame, ka)
+	return hdf[(ka.==2), :], hdf[(ka.==1), :]
+end
+
 # ╔═╡ 5d3e5e32-1d3f-4551-90be-68bf5d78920e
 hq2df, hq1df = ksipmsel(hitQdf, ka)
+
+# ╔═╡ b7625433-4509-422b-9cdd-83b9984f43da
+md"- Repeating the plots ater cut at $ecut pes shows a much cleaner distribution"
+
+# ╔═╡ 8e882ad9-2a98-438b-883f-6141c67375cb
+pxyqQ1,pxyQ1,pxzQ1,pyzQ1 = jp.JPetalo.plot_xyzq(hitQdf, 100.);
+
+# ╔═╡ dd577b58-33ff-4852-81c2-1d53918234f9
+plot(pxyqQ1,pxyQ1,pxzQ1,pyzQ1, layout = (2, 2), aspect_ratio=:equal,size = (1400, 1000), legend = false,  fmt = :png)
+
+# ╔═╡ 35132119-c793-4bfe-b228-7a017ce7789d
+md"- We can now select the hits with positive and negative phi, which define the clusters of the gammas"
+
+# ╔═╡ 2af988f3-4754-4de8-833b-a5bc57f0381d
+hqpdf, hqndf = jp.JPetalo.sipmsel(hitQdf);
+
+# ╔═╡ da5306f6-9bea-4cc3-9bf9-767b0908fb69
+md"- And compute the baricenters, which define the gamma position"
+
+# ╔═╡ 7f277fff-efaa-4502-8a58-45c4d4a514f5
+bp = jp.JPetalo.baricenter(hqpdf)
+
+# ╔═╡ dbd61080-79d6-4e64-8a87-a1ed243ff503
+bn = jp.JPetalo.baricenter(hqndf)
 
 # ╔═╡ 2a4af456-47c3-4330-8f8b-6d3812150e10
 b2 = jp.JPetalo.baricenter(hq2df)
@@ -819,6 +418,9 @@ b1 = jp.JPetalo.baricenter(hq1df)
 
 # ╔═╡ 4f1e223d-a51a-4ec4-afca-358a1f0d0139
 kM
+
+# ╔═╡ 75c15d2b-c314-493a-a773-cdffc61b43f2
+C=transpose([bp.x bp.y bp.z; bn.x bn.y bn.z])
 
 # ╔═╡ b215f8f2-2a09-467d-b831-50daad8ca542
 R = kmeans!(Mhits, C)
@@ -832,163 +434,56 @@ rbp = jp.JPetalo.Hit(rk[1,1],rk[2,1], rk[3,1], 0.)
 # ╔═╡ a41bfeb3-7b1f-4706-922c-7abfa9aadb55
 rbn = jp.JPetalo.Hit(rk[1,2],rk[2,2], rk[3,2], 0.)
 
-# ╔═╡ 9280feb6-636b-49b7-b886-28e93deddd2f
-function reco_lor(pdf, th1, ecut)
-	function ksipmsel(hdf::DataFrame, ka)
-		return hdf[(ka.==2), :], hdf[(ka.==1), :]
-	end
-	
-	BP = []
-	BN = []
-	rBP = []
-	rBN = []
-	QM = []
-	for evt0 in th1.event_id
-		evt = jp.JPetalo.select_event(pdf.total_charge, evt0)
-		evtQ1 = evt[evt.charge.>ecut,:]
-		hitQdf = jp.JPetalo.sipm_xyzq(evtQ1, pdf.sensor_xyz)
-		qm = maximum(hitQdf.q)
-		
-		Mhits = get_hits_as_matrix(hitQdf)
-		kr = kmeans(Mhits, 2)
-		ka = assignments(kr) # get the assignments of points to clusters
-		kc = counts(kr) # get the cluster sizes
-		rk = kr.centers # get the cluster centers
-		
-		hq2df, hq1df = ksipmsel(hitQdf, ka)
-		b1 = jp.JPetalo.baricenter(hq1df)
-		b2 = jp.JPetalo.baricenter(hq2df)
-		
-		rb1 = jp.JPetalo.Hit(rk[1,1],rk[2,1], rk[3,1], b1.q)
-		rb2 = jp.JPetalo.Hit(rk[1,2],rk[2,2], rk[3,2], b2.q)
-		
-		push!(BP, b1)
-		push!(BN, b2)
-		push!(rBP, rb1)
-		push!(rBN, rb2)
-		push!(QM, qm)
+# ╔═╡ 72b3c6a8-cd90-40de-b1b0-2907588ecc92
+md"- Finally we can draw the three proyections of the baricenter, together with the LORs that connect them"
 
-	end
-	return QM, BP, BN, rBP, rBN
-end
+# ╔═╡ 9a07dac6-f038-429c-a51a-a4237532fe82
+sxy, syz, sxz = jp.JPetalo.plot_barycenter(bp,bn, pxyQ1,pxzQ1,pyzQ1, 0.1);
 
-# ╔═╡ 08746abc-529b-4bef-baf3-24a01f215821
-scatter(x, y)
+# ╔═╡ e7eda113-32ad-47b9-8a74-10f759165e16
+plot(sxy,syz,sxz, layout = (1, 3), aspect_ratio=:equal,size = (1400, 1000),legend = false,  fmt = :png)
 
-# ╔═╡ 64fe61ae-0909-4aa5-8f6c-223faeb73d34
-histogram(z)
+# ╔═╡ 7941d91e-9807-48b7-b454-f8f192a2695c
+md"## Reconstruction of LORS"
 
-# ╔═╡ 3b051028-9e0f-4c78-99cd-73d6ed0e61b7
-@test mean(r) ≈ 409.6000094986399
+# ╔═╡ f8e5dd82-0a49-4d84-8a29-3cb221fce0a5
+QM, BP, BN, rBP, rBN = jp.JPetalo.reco_lor(pdf, th1.event_id, ecut)
 
-# ╔═╡ 389b5b10-0bad-483e-b02a-3dc15e231c29
-mean(r)
+# ╔═╡ 83ebaade-d34f-4631-a2a3-3e1012113d59
 
-# ╔═╡ 6d992b8f-210a-468c-9a72-5bda8564f619
-@test mean(z) ≈0
 
-# ╔═╡ 138db3d0-4920-4405-949f-d1ff3308c696
-md"""
-	select_event(dbdf::DataFrame, index::Int64)
+# ╔═╡ 54743f18-0f96-415f-a821-9743b33953be
+histogram(QM, bins=200, xlim=[10.,1500.])
 
-Take the event dataframe and the index of an event and returns a data frame which selects that particular event
+# ╔═╡ ae9283ae-fa33-4057-beb8-b49416ea90bb
+minimum(QM)
 
-"""
+# ╔═╡ a2c0da22-3df5-4b92-9f1d-562c4b5c1087
+bsxy, bsxz, bsyz = jp.JPetalo.plot_lors_barycenter(BP, BN, 1500.) ;
 
-# ╔═╡ dfcfd7e7-b6f8-423c-a177-be6360a031c1
-function select_event(dbdf::DataFrame, index::Int64)
-	return select_by_index(dbdf, "event_id", index)[:,2:end]
-end
+# ╔═╡ 60e090f2-b35d-4333-9464-6a9d9ac0084d
+rsxy, rsxz, rsyz = jp.JPetalo.plot_lors_barycenter(rBP, rBN, 1500.) ;
 
-# ╔═╡ 86078e18-ccbf-40cd-9b4c-08f1a5469147
-md"""
-	sipm_xyzq(evt::DataFrame, pdb::DataFrame)
+# ╔═╡ 8e51931c-cd9e-4056-816e-9a8e7a1f59a8
+plot(bsxy, rsxy, layout= (1, 2), aspect_ratio=:equal,size = (1400, 1000),legend = false,  fmt = :png)
 
-Take an event dataframe and a dataframe with the sipm positions and returns a hit-dataframe, with (x,y,z,q) for each sipm
-"""
+# ╔═╡ edc1f1e2-9d55-4c00-a2af-08571c7f38ab
+plot(bsxz, rsxz, layout = (2, 1),  aspect_ratio=:equal, size = (1600, 800), ylim=(-100.,100.), legend = false,  fmt = :png)
 
-# ╔═╡ dc324771-35b0-4410-a0d5-8582d8975d3a
-function sipm_xyzq(evt::DataFrame, pdb::DataFrame)
-	sids = evt[!,:sensor_id]
-	pos = sipm_pos.((pdb,),sids)
-	x = [p[1] for p in pos]
-	y = [p[2] for p in pos]
-	z = [p[3] for p in pos]
-	q = evt[!,:charge]
-	return DataFrame(x=x,y=y,z=z,q=q)
-end
+# ╔═╡ 382f01d9-6041-47ac-8ed6-b6cd1ea092c4
+plot(bsyz, rsyz, layout = (2, 1),  aspect_ratio=:equal, size = (1600, 800), ylim=(-100.,100.), legend = false,  fmt = :png)
 
-# ╔═╡ 7623540b-7892-45b0-bd28-39c2fedf620d
-md"""
-	baricenter(hdf::DataFrame)
+# ╔═╡ 71acb562-bcfd-40e7-a3b9-dcffe00cd557
+plot(bsxy, rsxy, layout= (1, 2), aspect_ratio=:equal,size = (1400, 1000),legend = false,  fmt = :png)
 
-Given a Hit DataFrame (a dataframe with columns x,y,z,q) return its barycenter
-"""
+# ╔═╡ 91ed4b00-54a4-4345-8212-ed25c27fe3aa
+plot(ptsxy, bsxy, layout= (1, 2), aspect_ratio=:equal,size = (1400, 1000),legend = false,  fmt = :png)
 
-# ╔═╡ f743a6f0-7f28-4bb7-be72-b25424879312
-function baricenter(hdf::DataFrame)
-	function xq(hdf::DataFrame, pos::String)
-		return sum(hdf[!,pos] .* hdf.q) / qt
-	end
-	qt = sum(hdf.q)
-	return Hit(xq(hdf, "x"), xq(hdf, "y"), xq(hdf, "z"), qt)
-end
+# ╔═╡ 4ce431ab-aac3-40c5-a15a-890d46d4b501
+plot(ptsxz, bsxz, layout= (2, 1), aspect_ratio=:equal, size = (1600, 800), ylim=(-100.,100.),legend = false,  fmt = :png)
 
-# ╔═╡ d859296b-b081-4e3b-aa9c-08c8f6fc99cd
-md"## Plot functions"
-
-# ╔═╡ 02434a19-c1cf-4c60-9457-928d64e3419b
-md"""
-	plot_xyzq(hdf::DataFrame)
-Take a hit dataframe and produce 4 scatter plots showing the clustering of the SiPMs and the phi distribution showing how the clusters distribute at opposite phi values 
-"""
-
-# ╔═╡ 625b20ac-1c95-4206-85bb-14705a4028f4
-function plot_xyzq(hdf::DataFrame)
-	pxyq = scatter(hdf.x,hdf.y,hdf.q, legend=false)
-	pxy = scatter(hdf.x,hdf.y, marker_z = hdf.q, markersize = hdf.q/3,  color = :jet,
-		         legend=false)
-	xlabel!("x")
-	ylabel!("y")
-	pxz = scatter(hdf.x,hdf.z, marker_z = hdf.q, markersize = hdf.q/3,  color = :jet,
-		         legend=false)
-	xlabel!("x")
-	ylabel!("z")
-	pyz = scatter(hdf.y,hdf.z, marker_z = hdf.q, markersize = hdf.q/3,  color = :jet,
-		         legend=false)
-	xlabel!("y")
-	ylabel!("z")
-	pphi = scatter(fphi(hdf), leg=false)
-	pphi = plot(atan.(hdf.y,hdf.x), shape  = :circle, legend=false)
-	#xlabel!("SiPM number")
-	ylabel!("tan(y/x)")
-	hphi = histogram(atan.(hdf.y,hdf.x), bins=20)
-	xlabel!("tan(y/x)")
-	return pxyq,pxy,pxz,pyz, pphi, hphi
-end
-
-# ╔═╡ afac8cb0-83d3-4be8-90a4-329b15d1b614
-md"""
-	plot_barycenter(bp,bn, pxy, pxz, pyz)
-Plots the barycenter of the SiPm clusters together with the LOR that connects them
-"""
-
-# ╔═╡ 856e70b5-0f27-45c6-afa2-b86cfd19f1bb
-function plot_barycenter(bp,bn, pxy, pxz, pyz)
-	lsxy = LineSegment([bp.x,bp.y],[bn.x,bn.y])
-	sxy = scatter!(pxy,[bp.x,bn.x],[bp.y,bn.y], 
-		marker_z = [bp.q,bn.q], markersize = 5,  color = :jet, legend=false)
-	sxy = plot!(sxy,lsxy)
-	syz = scatter!(pyz,[bp.y,bn.y],[bp.z,bn.z], 
-		marker_z = [bp.q,bn.q], markersize = 5, color = :jet,legend=false)
-	lsyz = LineSegment([bp.y,bp.z],[bn.y,bn.z])
-	syz  = plot!(syz,lsyz)
-	sxz = scatter!(pxz,[bp.x,bn.x],[bp.z,bn.z], 
-		marker_z = [bp.q,bn.q], markersize = 5, color = :jet,legend=false)
-	lsxz = LineSegment([bp.x,bp.z],[bn.x,bn.z])
-	sxz  = plot!(sxz,lsxz)
-	return sxy, syz, sxz
-end
+# ╔═╡ 256eb45e-88b2-41d3-8209-41e770bb9a11
+plot(ptsyz, bsyz, layout= (2, 1), aspect_ratio=:equal, size = (1600, 800), ylim=(-100.,100.),legend = false,  fmt = :png)
 
 # ╔═╡ Cell order:
 # ╠═79cfd2fc-9046-11eb-2b13-1b877d57645d
@@ -1107,19 +602,10 @@ end
 # ╠═9a07dac6-f038-429c-a51a-a4237532fe82
 # ╠═e7eda113-32ad-47b9-8a74-10f759165e16
 # ╠═7941d91e-9807-48b7-b454-f8f192a2695c
-# ╠═d9aeb478-23a5-4b5d-a993-873223cbd224
-# ╠═d0193465-d2f0-4232-994d-4f3a435ed42b
-# ╠═081194bf-31a5-47fb-8fe2-79c2e54ae88b
-# ╠═9280feb6-636b-49b7-b886-28e93deddd2f
-# ╠═7cfe5f8e-c951-49d0-89d7-7211c24c2f21
 # ╠═f8e5dd82-0a49-4d84-8a29-3cb221fce0a5
 # ╠═83ebaade-d34f-4631-a2a3-3e1012113d59
 # ╠═54743f18-0f96-415f-a821-9743b33953be
 # ╠═ae9283ae-fa33-4057-beb8-b49416ea90bb
-# ╠═521b5044-6492-468b-8e49-57fd196e40d9
-# ╠═7e933768-d917-4daa-9857-c4b1e72fd0c4
-# ╠═83ed2f0e-3e88-42fe-91f6-a51a21881d8b
-# ╠═ec1aab0e-fb78-42af-b1f4-e41ce9e19389
 # ╠═a2c0da22-3df5-4b92-9f1d-562c4b5c1087
 # ╠═60e090f2-b35d-4333-9464-6a9d9ac0084d
 # ╠═8e51931c-cd9e-4056-816e-9a8e7a1f59a8
@@ -1129,62 +615,3 @@ end
 # ╠═91ed4b00-54a4-4345-8212-ed25c27fe3aa
 # ╠═4ce431ab-aac3-40c5-a15a-890d46d4b501
 # ╠═256eb45e-88b2-41d3-8209-41e770bb9a11
-# ╠═1709ae5d-b256-4ab6-8c16-5edaa354f867
-# ╟─ccf11f8d-5bcb-40e1-8b6d-d88812c41f88
-# ╠═35d0f27d-0f97-401a-9a82-9e176cf62fa2
-# ╟─56b34074-ac36-476b-b3d9-9057fad68693
-# ╟─a124b244-f873-4847-b5de-a18b80975e80
-# ╠═b7a9953e-4392-4762-a6f4-979d47426639
-# ╠═567ca9fc-ce60-4b30-9246-07d999cd7654
-# ╠═12e87e3c-5521-4d94-b7f6-009abf5e96f1
-# ╠═6e112f16-c32c-491a-9b68-180a57aace8f
-# ╠═c91baad0-7c07-4b40-a99e-3c773b18b065
-# ╠═982329e8-61df-4bb9-b5fa-82f5c50edafe
-# ╠═3f26bf3b-a006-4956-9674-09b157c247c9
-# ╠═300b1614-741d-4720-b2bc-01539423a163
-# ╠═3872788b-62a9-4733-8d88-b4af0e59c423
-# ╠═d09f2c56-4ac1-47b4-b5d2-534a4c7b5301
-# ╠═44af890b-5d5b-4e57-b284-0a7729674466
-# ╟─1cdcefbf-99e1-43b3-9587-b9b5bfee40c4
-# ╠═e694f819-3099-4a90-9b44-e2151112941c
-# ╠═0a2569da-b161-428b-b092-722e01255971
-# ╠═735c6816-a7fc-457f-ae8b-95886fcc84bb
-# ╟─81685b61-d54e-4c6b-a087-c53a7d0f62e3
-# ╠═68847964-7edf-4dba-9cd0-2e9197fdf5a9
-# ╠═bbe9358e-1d79-4bd2-b003-d49831e21cfc
-# ╠═072d42e4-9924-4d2d-8302-c2cd34ec9ee3
-# ╠═2c52dc80-04ca-48e3-acfc-3d6f63acb323
-# ╠═8d38fc77-7801-42b6-91d4-d56e3f657f1b
-# ╠═c9111054-494c-4cc7-96cd-26d4c522da1b
-# ╠═050e991d-707f-43c2-80cd-d8ce570ac360
-# ╠═33192e19-2a20-4a43-ba36-2a5d40d009cf
-# ╠═12044636-6967-424f-977f-c11e8df0b2e1
-# ╟─7f8dd559-5c77-4924-9eb9-dfb6eabbed09
-# ╠═91e8eb43-3dde-4472-9cdf-07f86fde14a6
-# ╟─459e546d-825a-431e-a676-874a9bb926c4
-# ╠═c925cb36-358b-4e4a-82a8-11f06d162a11
-# ╟─3ae4d41f-624a-4f24-8d1f-d531ada29407
-# ╠═0b7a4788-9979-465b-bf23-b25f9ffc89f6
-# ╠═ba09133d-9fd7-43b9-b18b-2be8e95bc56e
-# ╟─daf2a651-519d-4861-865c-ca696ec4f419
-# ╠═0e32b95a-587f-4f30-9f47-49db52fedf9e
-# ╠═16c3f02f-7ce8-4664-881b-9a93dfd18f54
-# ╟─4ca52cab-b70e-4f56-970a-be78fef81a27
-# ╟─708c295b-5fb3-4e45-8674-389356576139
-# ╠═86a68e86-8ad1-4c09-8bd7-178106d35cf3
-# ╠═08746abc-529b-4bef-baf3-24a01f215821
-# ╠═64fe61ae-0909-4aa5-8f6c-223faeb73d34
-# ╠═3b051028-9e0f-4c78-99cd-73d6ed0e61b7
-# ╠═389b5b10-0bad-483e-b02a-3dc15e231c29
-# ╠═6d992b8f-210a-468c-9a72-5bda8564f619
-# ╠═138db3d0-4920-4405-949f-d1ff3308c696
-# ╠═dfcfd7e7-b6f8-423c-a177-be6360a031c1
-# ╟─86078e18-ccbf-40cd-9b4c-08f1a5469147
-# ╠═dc324771-35b0-4410-a0d5-8582d8975d3a
-# ╟─7623540b-7892-45b0-bd28-39c2fedf620d
-# ╠═f743a6f0-7f28-4bb7-be72-b25424879312
-# ╟─d859296b-b081-4e3b-aa9c-08c8f6fc99cd
-# ╠═02434a19-c1cf-4c60-9457-928d64e3419b
-# ╠═625b20ac-1c95-4206-85bb-14705a4028f4
-# ╟─afac8cb0-83d3-4be8-90a4-329b15d1b614
-# ╠═856e70b5-0f27-45c6-afa2-b86cfd19f1bb

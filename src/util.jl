@@ -247,3 +247,12 @@ function xyz_dot(hitdf::DataFrame, simax::Hit)
 	xyzm_dot = dot(xyzmax, xyzmax)
 	return [dot(Array(hitdf[i,1:3]), xyzmax) /xyzm_dot  for i in 1:nrow(hitdf)]
 end
+
+
+radius(x::Number, y::Number) = sqrt(x^2 + y^2)
+radius(x::Float64, y::Float64) = sqrt(x^2 + y^2)
+
+
+function fphi(hdf::DataFrame)
+	return atan.(hdf.y,hdf.x)
+end

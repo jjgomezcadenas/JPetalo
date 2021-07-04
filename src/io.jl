@@ -17,6 +17,23 @@ struct PetaloDF
 end
 
 """
+	MlemLor
+
+Struct representing a LOR
+"""
+struct MlemLor
+	t1::Float32
+	t2::Float32
+	x1::Float32
+	y1::Float32
+	z1::Float32
+	x2::Float32
+	y2::Float32
+	z2::Float32
+end
+
+
+"""
 	readh5_dset(path::String, folder::String, dset::String)
 
 read an h5 dataset
@@ -69,5 +86,44 @@ function read_abc(path::String)
 					vertices,
 					total_charge,
 					waveform)
+end
 
+"""
+	write_lors_hdf5(filename, mlor)
+	Write lors in a hdf5 format required by petalorust (mlem algo)
+"""
+function write_lors_hdf5(filename, mlor)
+
+	function set_datatype(::Type{MlemLor})
+		dtype = HDF5.h5t_create(HDF5.H5T_COMPOUND, sizeof(MlemLor))
+		HDF5.h5t_insert(dtype, "t1", fieldoffset(MlemLor, 1),
+			            datatype(Float32))
+		HDF5.h5t_insert(dtype, "t2", fieldoffset(MlemLor, 2),
+			            datatype(Float32))
+		HDF5.h5t_insert(dtype, "x1", fieldoffset(MlemLor, 3),
+			            datatype(Float32))
+		HDF5.h5t_insert(dtype, "y1", fieldoffset(MlemLor, 4),
+			            datatype(Float32))
+		HDF5.h5t_insert(dtype, "z1", fieldoffset(MlemLor, 5),
+			            datatype(Float32))
+		HDF5.h5t_insert(dtype, "x2", fieldoffset(MlemLor, 6),
+			            datatype(Float32))
+		HDF5.h5t_insert(dtype, "y2", fieldoffset(MlemLor, 7),
+			            datatype(Float32))
+		HDF5.h5t_insert(dtype, "z2", fieldoffset(MlemLor, 8),
+			            datatype(Float32))
+
+		HDF5.Datatype(dtype)
+	end
+
+	h5f = h5open(filename, "w")
+
+	dtype = set_datatype(MlemLor)
+	dspace = dataspace(mlor)
+	grp = create_group(h5f, "true_info")
+	dset = create_dataset(grp, "lors", dtype, dspace)
+	write_dataset(dset, dtype, mlor)
+
+
+	close(h5f)
 end

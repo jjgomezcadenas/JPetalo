@@ -1,6 +1,11 @@
 using DataFrames
 using LinearAlgebra
 
+
+function hello()
+    println("Hello Julia!")
+end
+
 """
 	TrueHits
 
@@ -95,25 +100,25 @@ function select_by_index(df::DataFrame, column::String, value::Integer)
 end
 
 
-"""
-	true_lors(dfr::DataFrame)
-
-Return a vector of true lors. Each element of the vector is a DataFrame
-wit two rows, one per gamma.
-
-"""
-function true_lors(dfr::DataFrame)
-	GP  = []
-	cevt = 0
-	for event in dfr.event_id
-		df = select_by_column_value(dfr, "event_id", event)
-		if nrow(df) == 2  && event != cevt
-			push!(GP,df)
-			cevt = event
-		end
-	end
-	return GP
-end
+# """
+# 	true_lors(dfr::DataFrame)
+#
+# Return a vector of true lors. Each element of the vector is a DataFrame
+# wit two rows, one per gamma.
+#
+# """
+# function true_lors(dfr::DataFrame)
+# 	GP  = []
+# 	cevt = 0
+# 	for event in dfr.event_id
+# 		df = select_by_column_value(dfr, "event_id", event)
+# 		if nrow(df) == 2  && event != cevt
+# 			push!(GP,df)
+# 			cevt = event
+# 		end
+# 	end
+# 	return GP
+# end
 
 """
 	get_truehits(GP)
@@ -172,6 +177,7 @@ function sipm_xyzq(evt::DataFrame, sxyz::DataFrame)
 	return DataFrame(x=x,y=y,z=z,q=q)
 end
 
+
 """
 	baricenter(hdf::DataFrame)
 	returns the barycenter of a cluster of hits
@@ -185,18 +191,18 @@ function baricenter(hdf::DataFrame)
 end
 
 
-"""
-	sipmsel(hdf::DataFrame)
-Return two data frames, separating the SiPMs in the phi angle relative
-
-to the SiPM of max charge.
-"""
-function sipmsel(hdf::DataFrame)
-	simax = find_xyz_sipm_qmax(hdf)
-	npr   = xyz_dot(hdf, simax)
-	mask =[n>0 ? true : false for n in npr]
-	return hdf[(npr.>0), :], hdf[(npr.<0), :]
-end
+# """
+# 	sipmsel(hdf::DataFrame)
+# Return two data frames, separating the SiPMs in the phi angle relative
+#
+# to the SiPM of max charge.
+# """
+# function sipmsel(hdf::DataFrame)
+# 	simax = find_xyz_sipm_qmax(hdf)
+# 	npr   = xyz_dot(hdf, simax)
+# 	mask =[n>0 ? true : false for n in npr]
+# 	return hdf[(npr.>0), :], hdf[(npr.<0), :]
+# end
 
 """
 	find_xyz_sipm_qmax(hitdf::DataFrame)
@@ -249,8 +255,8 @@ function xyz_dot(hitdf::DataFrame, simax::Hit)
 end
 
 
-radius(x::Number, y::Number) = sqrt(x^2 + y^2)
-radius(x::Float64, y::Float64) = sqrt(x^2 + y^2)
+#radius(x::Number, y::Number) = sqrt(x^2 + y^2)
+#radius(x::Float64, y::Float64) = sqrt(x^2 + y^2)
 
 
 function fphi(hdf::DataFrame)

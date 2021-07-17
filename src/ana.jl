@@ -120,7 +120,6 @@ function get_hits_as_matrix(hitdf::DataFrame)
 	return transpose(pred)
 end
 
-
 # lors
 
 """
@@ -169,15 +168,15 @@ function radial_correction(b::Hit, r::Float32, rsipm::Float32)
 	return r2 * b.x, r2 * b.y, b.z
 end
 
-
-"""
-	fphi(hdf::DataFrame)
-
-Compute Phi from (X,Y)
-"""
-function fphi(hdf::DataFrame)
-	return atan.(hdf.y,hdf.x)
-end
+#
+# """
+# 	fphi(hdf::DataFrame)
+#
+# Compute Phi from (X,Y)
+# """
+# function fphi(hdf::DataFrame)
+# 	return atan.(hdf.y,hdf.x)
+# end
 
 
 """
@@ -189,10 +188,6 @@ Sqrt(1/Q Sum_i (phi_i - phi_mean) * qi )
 function phistd(hitdf::DataFrame)
 	phi = fphi(hitdf)
 	return wstd(phi, hitdf.q)
-	# xphi = mean(phi)
-	# qs = sum((phi.-xphi).^2 .* hitdf.q)
-	# Q = sum(hitdf.q)
-	# return sqrt(qs/Q)
 end
 
 
@@ -205,7 +200,33 @@ Sqrt(1/Q Sum_i (phi_i - phi_mean) * qi )
 function xyzstd(hitdf::DataFrame, column::String="x")
 	x = hitdf[!, column]
 	return wstd(x, hitdf.q)
-	# qs = sum((x.-mean).^2 .* hitdf.q)
-	# Q = sum(hitdf.q)
-	# return sqrt(qs/Q)
+end
+
+
+#q correction
+
+"""
+	qcor(df::DataFrame, lf::Function, yref::Number)
+
+Linear correction to q
+"""
+function qcor(df::DataFrame, lf::Function, yref::Number)
+    yold = df.y_mean
+    ypre = lf.(df.x_mean)
+    return (yold .- ypre) .+ yref
+end
+
+
+function qcor2!(df::DataFrame, lf::Function,
+	            xc="r", yc="q1", new="qc", yref=2000.0)
+    yold = df[!, yc]
+    ypre = lf.(df[!, xc])
+    df[!, new] = (yold .- ypre) .+ yref
+end
+
+
+function qcorrection!(n3df::DataFrame, bins::Integer=100)
+    prqdf = JPetalo.p1df(n3df.r, n3df.q1, bins)
+    lfrq, prq, crq = JPetalo.lfit(prqdf)
+    JPetalo.qcor2!(n3df, lfrq, "r", "q1", "qc", 2000.0);
 end

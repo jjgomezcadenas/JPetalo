@@ -1,6 +1,7 @@
 module JPetalo
 include("types.jl")
 include("util.jl")
+include("math.jl")
 include("io.jl")
 include("ana.jl")
 include("nema3a.jl")

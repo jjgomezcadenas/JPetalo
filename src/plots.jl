@@ -38,6 +38,36 @@ function plot_truehits(th1, th2, emax=51.1)
 	return pxyq,pxy,pxz,pyz
 end
 
+"""
+	plot_truehits(th1, th2)
+"""
+function plot_truehits2(th1, th2)
+
+	pxyz = scatter(th1.x,th1.y,th1.z, legend=false)
+	pxyz = scatter!(pxyz, th2.x,th2.y,th2.z, legend=false)
+	#xlabel!("x")
+	#ylabel!("y")
+	#zlabel!("z")
+
+	pxy = scatter(th1.x,th1.y, legend=false)
+	pxy = scatter!(pxy, th2.x,th2.y, legend=false)
+	xlabel!("x")
+	ylabel!("y")
+
+	pxz = scatter(th1.x,th1.z, legend=false)
+	pxz = scatter!(pxz, th2.x,th2.z, legend=false)
+	xlabel!("x")
+	ylabel!("z")
+
+	pyz = scatter(th1.y,th1.z, legend=false)
+	pyz = scatter!(pyz, th2.y,th2.z, legend=false)
+	xlabel!("y")
+	ylabel!("z")
+
+	return pxyz,pxy,pxz,pyz
+end
+
+
 
 """
 	plot_lors(th1, th2, index, emax=51.1)
@@ -81,7 +111,7 @@ end
 """
 	plot_lors_all(th1, th2, emax=51.1)
 """
-function plot_lors_all2(th1, th2, emax=51.1)
+function plot_lors_all2(th1, th2, emax=51.1, ic=1)
 	h1 = select_truehit(th1, 1)
 	h2 = select_truehit(th2, 1)
 
@@ -92,7 +122,7 @@ function plot_lors_all2(th1, th2, emax=51.1)
 	lsxy = LineSegment([h1.x,h1.y],[h2.x,h2.y])
 	sxy  = plot!(pxy,lsxy)
 
-	for indx in 2:size(th1.x)[1]
+	for indx in 2:ic:size(th1.x)[1]
 		h1 = select_truehit(th1, indx)
 		h2 = select_truehit(th2, indx)
 
@@ -110,7 +140,7 @@ function plot_lors_all2(th1, th2, emax=51.1)
 end
 
 
-function plot_lors_all(th1, th2, emax=100.0)
+function plot_lors_all(th1, th2, emax=100.0, ic=1)
 	function plot_xy()
 		h1 = select_truehit(th1, 1)
 		h2 = select_truehit(th2, 1)
@@ -122,7 +152,7 @@ function plot_lors_all(th1, th2, emax=100.0)
 		lsxy = LineSegment([h1.x,h1.y],[h2.x,h2.y])
 		sxy  = plot!(pxy,lsxy)
 
-		for indx in 2:size(th1.x)[1]
+		for indx in 2:ic:size(th1.x)[1]
 			h1 = select_truehit(th1, indx)
 			h2 = select_truehit(th2, indx)
 
@@ -149,7 +179,7 @@ function plot_lors_all(th1, th2, emax=100.0)
 		lsxz = LineSegment([h1.x,h1.z],[h2.x,h2.z])
 		sxz  = plot!(pxz,lsxz)
 
-		for indx in 2:size(th1.x)[1]
+		for indx in 2:ic:size(th1.x)[1]
 			h1 = select_truehit(th1, indx)
 			h2 = select_truehit(th2, indx)
 
@@ -177,7 +207,7 @@ function plot_lors_all(th1, th2, emax=100.0)
 		lsyz = LineSegment([h1.y,h1.z],[h2.y,h2.z])
 		syz  = plot!(pyz,lsyz)
 
-		for indx in 2:size(th1.x)[1]
+		for indx in 2:ic:size(th1.x)[1]
 			h1 = select_truehit(th1, indx)
 			h2 = select_truehit(th2, indx)
 

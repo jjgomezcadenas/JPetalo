@@ -5,6 +5,7 @@ include("../src/jpetalo.jl")
 
 using DataFrames
 using Glob
+using ArgParse
 
 """
 	makelor_3p(files::Vector{String},
@@ -29,10 +30,12 @@ function makelor_3p(files::Vector{String}, fxy=JPetalo.lor_kmeans,
 	RLB = [(t1=0.0,t2=0.0,x1=0.0,y1=0.0,z1=0.0,x2=0.0,y2=0.0,z2=0.0)]
 	# LOR corrected using R
 	RLR = [(t1=0.0,t2=0.0,x1=0.0,y1=0.0,z1=0.0,x2=0.0,y2=0.0,z2=0.0)]
-	# RLHB = [(t1=0.0,t2=0.0,x1=0.0,y1=0.0,z1=0.0,x2=0.0,y2=0.0,z2=0.0)]
-	# RLKB = [(t1=0.0,t2=0.0,x1=0.0,y1=0.0,z1=0.0,x2=0.0,y2=0.0,z2=0.0)]
-	# RLKK = [(t1=0.0,t2=0.0,x1=0.0,y1=0.0,z1=0.0,x2=0.0,y2=0.0,z2=0.0)]
+	dr   = 5 # mm
 
+	pdf = JPetalo.read_abc(files[1])
+	rsipm = sqrt(pdf.sensor_xyz.x[2]^2+pdf.sensor_xyz.y[2]^2)
+	rmax = rsipm + dr
+	rmin = rsipm - dr
 
 	for file in files[file_i:file_l]               # loop on files
 		println("reading file = ", file)
@@ -55,20 +58,19 @@ function makelor_3p(files::Vector{String}, fxy=JPetalo.lor_kmeans,
 
 				#select reco
 				hitdf  = JPetalo.reco_hits(event, ecut, pdf)
-				#b1, b2 = JPetalo.lor_maxq(hitdf)
-				#rb1, rb2 = JPetalo.lor_kmeans(hitdf)
 
 				# reconstruct (x,y) : barycenter
-				b1, b2 = fxy(hitdf)
+				b1, b2, hq2df, hq1df = fxy(hitdf)
+
 
 				# find R1 and R2 (from True info)
 
-				R1 = sqrt(df1.x[1]^2 + df1.y[1]^2)
-				R2 = sqrt(df2.x[1]^2 + df2.y[1]^2)
+				r1 = sqrt(df1.x[1]^2 + df1.y[1]^2)
+				r2 = sqrt(df2.x[1]^2 + df2.y[1]^2)
 
 				# New (x,y) positions estimated from R1 and R2
-				x1,y1,z1  = rxyz(b1, R1)
-				x2,y2,z2  = rxyz(b2, R2)
+				x1,y1,z1  = JPetalo.radial_correction(b1, r1, rsipm)
+				x2,y2,z2  = JPetalo.radial_correction(b2, r2, rsipm)
 
 				push!(RLR, (t1=df1.t[1],t2=df2.t[1],
 						    x1=x1,y1=y1,z1=z1,
@@ -77,12 +79,6 @@ function makelor_3p(files::Vector{String}, fxy=JPetalo.lor_kmeans,
 				push!(RLB, (t1=df1.t[1],t2=df2.t[1],
 						    x1=b1.x,y1=b1.y,z1=b1.z,
 						    x2=b2.x,y2=b2.y,z2=b2.z))
-
-				# push!(RLKK, (t1=df1.t[1],t2=df2.t[1],
-				# 		    x1=kb1.x,y1=kb1.y,z1=kb1.z,
-				# 		    x2=kb2.x,y2=kb2.y,z2=kb2.z))
-
-				# correct barycenter
 
 				cevt = event
 			end
@@ -105,47 +101,88 @@ function df_to_mlemlor(ldf::DataFrame)
 	return ml
 end
 
-function rxyz(b::JPetalo.Hit, R::Float32)
-	θ = atan(b.y, b.x)
-	ϕ = atan(b.z, R)
-	x = R * cos(θ)
-	y = R * sin(θ)
-	z = R * sin(ϕ)
-	return x,y,z
-end
+# """
+# 	radial_correction(b::JPetalo.Hit, r::Float32, rsipm::Float32)
+#
+# Take the estimated radius of interaction (r), and the radius of the sipm
+# and return the corrected positions
+# """
+# function radial_correction(b::JPetalo.Hit, r::Float32, rsipm::Float32)
+# 	r2 = r / rsipm   # redial correction
+# 	return r2 * b.x, r2 * b.y, b.z
+# end
 
-function makelors()
+function makelors(args)
 	ecut = 4.0
 
 	println("+++makelor: ecut (in pes) = ", ecut)
 
-	dr = datadir("nema3-vac-1m")
+	#dr = datadir("nema3-vac-1m")
+	dr = datadir(args["dir"])
 	files = glob("*.h5",dr)
 
 	println("number of files in data dir = ", length(files))
-	file_i = 31
-	file_l = 40
+	file_i = args["filei"]
+	file_l = args["filel"]
+	odir   = args["odir"]
+	ecut   = args["ecut"]
 
 	println("reading =", file_l - file_i + 1, " files")
 
 	#tldf, rlhbdf, rlkbdf, rlkkdf = makelor_3p(files, 4.0, file_i, file_l)
 	tldf, rlbdf, rlrdf = makelor_3p(files, JPetalo.lor_kmeans,
-	                                4.0, file_i, file_l)
+	                                ecut, file_i, file_l)
 
 	mtl   = df_to_mlemlor(tldf)
 	mrlb  = df_to_mlemlor(rlbdf)
 	mrlr  = df_to_mlemlor(rlrdf)
-	#mrlkk = df_to_mlemlor(rlkkdf)
 
-	smtl  = string("nema3/tl_",file_i,"_", file_l, ".h5")
-	smrlb = string("nema3/rlb_",file_i,"_", file_l, ".h5")
-	smrlr = string("nema3/rlr_",file_i,"_", file_l, ".h5")
-	#smrlkk = string("nema3/rlkk_",file_i,"_", file_l, ".h5")
+	smtl  = string(odir,"/tl_",file_i,"_", file_l, ".h5")
+	smrlb = string(odir,"/rlb_",file_i,"_", file_l, ".h5")
+	smrlr = string(odir,"/rlr_",file_i,"_", file_l, ".h5")
 
 	JPetalo.write_lors_hdf5(datadir(smtl), mtl)
 	JPetalo.write_lors_hdf5(datadir(smrlb), mrlb)
 	JPetalo.write_lors_hdf5(datadir(smrlr), mrlr)
-	#JPetalo.write_lors_hdf5(datadir(smrlkk), mrlkk)
+
 end
 
-@time makelors()
+
+function parse_commandline()
+    s = ArgParseSettings()
+
+    @add_arg_table s begin
+        "--dir", "-d"
+            help = "directory with nema3 simulations"
+            arg_type = String
+            default = "nema3-vac-1m"
+		"--odir", "-o"
+            help = "output directory"
+            arg_type = String
+            default = "nema3-vac-1m"
+
+		"--filei", "-i"
+	        help = "number of initial file in glob list"
+	        default  = 1
+			arg_type = Int
+		"--filel", "-l"
+		    help = "number of last file in glob list"
+		    default  = 1
+			arg_type = Int
+		"--ecut", "-e"
+		    help = "cut on SiPM charge (in pes)"
+		    default  = 4.0
+			arg_type = Float64
+
+    end
+
+    return parse_args(s)
+end
+
+function main()
+	parsed_args = parse_commandline()
+	println("Running makelors with arguments", parsed_args)
+	makelors(parsed_args)
+end
+
+@time main()

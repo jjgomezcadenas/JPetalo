@@ -29,7 +29,7 @@ end
 	Computes reconstructed lors
 
 """
-function reco_lor(pdf::PetaloDF, evtlist::Vector{Integer}, ecut::Float64)
+function reco_lor(pdf::PetaloDF, evtlist::Vector{Integer}, ecut::Integer)
 
 	function ksipmsel(hdf::DataFrame, ka::Vector{Int64})
 		return hdf[(ka.==2), :], hdf[(ka.==1), :]
@@ -78,7 +78,7 @@ function reco_lor(pdf::PetaloDF, evtlist::Vector{Integer}, ecut::Float64)
 end
 
 
-function reco_lor(event::Int64, ecut::Float64, pdf::PetaloDF)
+function reco_lor(event::Int64, ecut::Integer, pdf::PetaloDF)
 	qevt   = select_event(pdf.total_charge, event)    #select q for event
 	evtQ   = qevt[qevt.charge.>ecut,:]                 # charge cut
 	event = evt[evt.charge.>ecut,:]   #SiPMs with charge above ecut

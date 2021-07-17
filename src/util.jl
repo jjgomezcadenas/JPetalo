@@ -1,71 +1,103 @@
 using DataFrames
 using LinearAlgebra
+using GLM
 
+#linear fit wrapper
 
-function hello()
-    println("Hello Julia!")
+function lfit(ndf::DataFrame)
+    lr = lm(@formula(y_mean ~ x_mean), ndf)
+    c = coef(lr)
+    return x -> c[1] + c[2]*x, predict(lr), c
 end
+#misc math
 
 """
-	TrueHits
-
-Represents vectors of true hits, characterized by position and energy
-
+	rxy(x::Number,y::Number)
+	r -> sqrt{x^2 + y^2}
 """
-struct TrueHits
-	event_id::Vector{Integer}
-	x::Vector{Float32}
-	y::Vector{Float32}
-	z::Vector{Float32}
-	t::Vector{Float32}
-	e::Vector{Float32}
-end
-
-"""
-	TrueHit
-
-Represents a true hit, characterized by position and energy
-
-"""
-struct TrueHit
-	event_id::Integer
-	x::Float32
-	y::Float32
-	z::Float32
-	t::Float32
-	e::Float32
-end
-
-"""
-	Hit
-
-Represents a hit, characterized by position and charge
-
-"""
-struct Hit
-	x::Float64
-	y::Float64
-	z::Float64
-	q::Float64
-end
-
-"""
-	select_truehit(th::TrueHits, index::Integer)
-
-Returns TrueHit corresponding to index from a vector of TrueHits
-
-"""
-function select_truehit(th::TrueHits, index::Integer)
-	eid = th.event_id[index]
-	x   = th.x[index]
-	y   = th.y[index]
-	z   = th.z[index]
-	t   = th.t[index]
-	e   = th.e[index]
-	return TrueHit(eid,x,y,z,t,e)
+function rxy(x::Number,y::Number)
+    return sqrt(x^2 + y^2)
 end
 
 
+"""
+	phixy(x::Number,y::Number)
+	phi -> atan(y/x)
+"""
+function phixy(x::Number,y::Number)
+    return atan(y,x)
+end
+
+
+"""
+	dxyz(x1::Vector{Number}, x2::Vector{Number})
+
+Distance between two points.
+"""
+function gdxyz(x1, x2)
+    return sqrt((x1[1] - x2[1])^2 + (x1[2] - x2[2])^2 + (x1[3] - x2[3])^2)
+end
+
+
+function dxyz(x1::Vector{Float32}, x2::Vector{Float32})
+    return gdxyz(x1, x2)
+end
+function dxyz(x1::Vector{Float64}, x2::Vector{Float64})
+    return gdxyz(x1, x2)
+end
+function dxyz(x1::Vector{Number}, x2::Vector{Number})
+    return gdxyz(x1, x2)
+end
+function dxyz(x1::Vector{Integer}, x2::Vector{Integer})
+    return gdxyz(x1, x2)
+end
+
+
+"""
+function gwstd(x, q)
+
+Compute the std deviation in x weighted by q:
+Sqrt(1/Q Sum_i (x - x_mean) * qi )
+"""
+function gwstd(x, q)
+	xmean = mean(x)
+	qs = sum((x.-xmean).^2 .* q)
+	Q = sum(q)
+	return sqrt(qs/Q)
+end
+wstd(x::Vector{Float32}, q::Vector{Float32}) = gwstd(x, q)
+wstd(x::Vector{Float64}, q::Vector{Float64}) = gwstd(x, q)
+wstd(x::Vector{Number}, q::Vector{Number}) = gwstd(x, q)
+
+
+#q correction
+"""
+	qcor(df::DataFrame, lf::Function, yref::Number)
+
+Linear correction to q
+"""
+function qcor(df::DataFrame, lf::Function, yref::Number)
+    yold = df.y_mean
+    ypre = lf.(df.x_mean)
+    return (yold .- ypre) .+ yref
+end
+
+
+function qcor2!(df::DataFrame, lf::Function,
+	            xc="r", yc="q1", new="qc", yref=2000.0)
+    yold = df[!, yc]
+    ypre = lf.(df[!, xc])
+    df[!, new] = (yold .- ypre) .+ yref
+end
+
+
+function qcorrection!(n3df::DataFrame, bins::Integer=100)
+    prqdf = JPetalo.p1df(n3df.r, n3df.q1, bins)
+    lfrq, prq, crq = JPetalo.lfit(prqdf)
+    JPetalo.qcor2!(n3df, lfrq, "r", "q1", "qc", 2000.0);
+end
+
+#data frames
 """
 	select_event(dbdf::DataFrame, index::Int64)
 
@@ -88,6 +120,40 @@ function select_by_column_value(df::DataFrame, column::String, value)
 	return df[mask,:]
 end
 
+"""
+	select_by_column_value_lt(df::DataFrame, column::String, value)
+
+Select elements in the DF which are less than "value" in "column"
+
+"""
+function select_by_column_value_lt(df::DataFrame, column::String, value)
+	mask = df[!,column].<value
+	return df[mask,:]
+end
+
+
+"""
+	select_by_column_value_gt(df::DataFrame, column::String, value)
+
+Select elements in the DF which are larger than "value" in "column"
+
+"""
+function select_by_column_value_gt(df::DataFrame, column::String, value)
+	mask = df[!,column].>value
+	return df[mask,:]
+end
+
+"""
+	select_by_column_value_interval(df::DataFrame, column::String, valuef, valuel)
+
+Select elements in the DF which are in interval (valuef, valuel)
+
+"""
+function select_by_column_value_interval(df::DataFrame, column::String, valuef, valuel)
+	df1 = select_by_column_value_gt(df, column, valuef)
+    return select_by_column_value_lt(df1, column, valuel)
+end
+
 
 """
 	select_by_index(df::DataFrame, column::String, value::Integer)
@@ -99,26 +165,6 @@ function select_by_index(df::DataFrame, column::String, value::Integer)
 	return select_by_column_value(df, column, value)
 end
 
-
-# """
-# 	true_lors(dfr::DataFrame)
-#
-# Return a vector of true lors. Each element of the vector is a DataFrame
-# wit two rows, one per gamma.
-#
-# """
-# function true_lors(dfr::DataFrame)
-# 	GP  = []
-# 	cevt = 0
-# 	for event in dfr.event_id
-# 		df = select_by_column_value(dfr, "event_id", event)
-# 		if nrow(df) == 2  && event != cevt
-# 			push!(GP,df)
-# 			cevt = event
-# 		end
-# 	end
-# 	return GP
-# end
 
 """
 	get_truehits(GP)
@@ -167,42 +213,25 @@ end
 Return the hits for an event
 
 """
-function sipm_xyzq(evt::DataFrame, sxyz::DataFrame)
-	sids = evt[!,:sensor_id]
-	pos = sipm_pos.((sxyz,),sids)
-	x = [p[1] for p in pos]
-	y = [p[2] for p in pos]
-	z = [p[3] for p in pos]
-	q = evt[!,:charge]
-	return DataFrame(x=x,y=y,z=z,q=q)
-end
-
-
-"""
-	baricenter(hdf::DataFrame)
-	returns the barycenter of a cluster of hits
-"""
-function baricenter(hdf::DataFrame)
-	function xq(hdf::DataFrame, pos::String)
-		return sum(hdf[!,pos] .* hdf.q) / qt
-	end
-	qt = sum(hdf.q)
-	return Hit(xq(hdf, "x"), xq(hdf, "y"), xq(hdf, "z"), qt)
-end
-
-
-# """
-# 	sipmsel(hdf::DataFrame)
-# Return two data frames, separating the SiPMs in the phi angle relative
-#
-# to the SiPM of max charge.
-# """
-# function sipmsel(hdf::DataFrame)
-# 	simax = find_xyz_sipm_qmax(hdf)
-# 	npr   = xyz_dot(hdf, simax)
-# 	mask =[n>0 ? true : false for n in npr]
-# 	return hdf[(npr.>0), :], hdf[(npr.<0), :]
+# function sipm_xyzq(evt::DataFrame, sxyz::DataFrame)
+# 	sids = evt[!,:sensor_id]
+# 	pos = sipm_pos.((sxyz,),sids)
+# 	x = [p[1] for p in pos]
+# 	y = [p[2] for p in pos]
+# 	z = [p[3] for p in pos]
+# 	q = evt[!,:charge]
+# 	return DataFrame(x=x,y=y,z=z,q=q)
 # end
+
+function sipm_xyzq(qdf::DataFrame, sxyz::DataFrame)
+    sids = qdf.sensor_id
+    pos = sipm_pos.((sxyz,),sids)
+    x = [p[1] for p in pos]
+    y = [p[2] for p in pos]
+    z = [p[3] for p in pos]
+    return DataFrame(x=x,y=y,z=z,q=qdf.Q)
+end
+
 
 """
 	find_xyz_sipm_qmax(hitdf::DataFrame)
@@ -257,8 +286,3 @@ end
 
 #radius(x::Number, y::Number) = sqrt(x^2 + y^2)
 #radius(x::Float64, y::Float64) = sqrt(x^2 + y^2)
-
-
-function fphi(hdf::DataFrame)
-	return atan.(hdf.y,hdf.x)
-end

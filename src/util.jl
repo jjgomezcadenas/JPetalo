@@ -17,6 +17,7 @@ function gin_range(x, xmin, xmax)
 end
 in_range(x::Vector{Float64}, xmin::Float64, xmax::Float64) = gin_range(x, xmin, xmax)
 in_range(x::Vector{Float32}, xmin::Float32, xmax::Float32) = gin_range(x, xmin, xmax)
+in_range(x::Vector{Float32}, xmin::Float64, xmax::Float64) = gin_range(x, xmin, xmax)
 in_range(x::Vector{Int64}, xmin::Int64, xmax::Int64) = gin_range(x, xmin, xmax)
 
 """
@@ -34,7 +35,6 @@ end
 	select_by_column_value(df::DataFrame, column::String, value)
 
 Select elements in the DF which have "value" in "column"
-
 """
 function select_by_column_value(df::DataFrame, column::String, value)
 	mask = df[!,column].==value
@@ -45,7 +45,6 @@ end
 	select_by_column_value_lt(df::DataFrame, column::String, value)
 
 Select elements in the DF which are less than "value" in "column"
-
 """
 function select_by_column_value_lt(df::DataFrame, column::String, value)
 	mask = df[!,column].<value
@@ -54,26 +53,81 @@ end
 
 
 """
+	select_by_column_value_le(df::DataFrame, column::String, value)
+
+Select elements in the DF which are less or equal than "value" in "column"
+"""
+function select_by_column_value_le(df::DataFrame, column::String, value)
+	mask = df[!,column].<=value
+	return df[mask,:]
+end
+
+
+"""
 	select_by_column_value_gt(df::DataFrame, column::String, value)
 
 Select elements in the DF which are larger than "value" in "column"
-
 """
 function select_by_column_value_gt(df::DataFrame, column::String, value)
 	mask = df[!,column].>value
 	return df[mask,:]
 end
 
+
+"""
+	select_by_column_value_ge(df::DataFrame, column::String, value)
+
+Select elements in the DF which are larger or equal than "value" in "column"
+"""
+function select_by_column_value_ge(df::DataFrame, column::String, value)
+	mask = df[!,column].>=value
+	return df[mask,:]
+end
+
+
 """
 	select_by_column_value_interval(df::DataFrame, column::String, valuef, valuel)
 
 Select elements in the DF which are in interval (valuef, valuel)
-
 """
 function select_by_column_value_interval(df::DataFrame, column::String, valuef, valuel)
 	df1 = select_by_column_value_gt(df, column, valuef)
     return select_by_column_value_lt(df1, column, valuel)
 end
+
+
+"""
+	select_by_column_value_closed_interval(df::DataFrame, column::String, valuef, valuel)
+
+Select elements in the DF which are in interval [valuef, valuel]
+"""
+function select_by_column_value_closed_interval(df::DataFrame, column::String, valuef, valuel)
+	df1 = select_by_column_value_ge(df, column, valuef)
+    return select_by_column_value_le(df1, column, valuel)
+end
+
+
+"""
+	select_by_column_value_closed_left_interval(df::DataFrame, column::String, valuef, valuel)
+
+Select elements in the DF which are in interval [valuef, valuel)
+"""
+function select_by_column_value_closed_left_interval(df::DataFrame, column::String, valuef, valuel)
+	df1 = select_by_column_value_ge(df, column, valuef)
+    return select_by_column_value_lt(df1, column, valuel)
+end
+
+
+"""
+	select_by_column_value_closed_right_interval(df::DataFrame, column::String, valuef, valuel)
+
+Select elements in the DF which are in interval (valuef, valuel]
+"""
+function select_by_column_value_closed_right_interval(df::DataFrame, column::String, valuef, valuel)
+	df1 = select_by_column_value_gt(df, column, valuef)
+    return select_by_column_value_le(df1, column, valuel)
+end
+
 
 
 """

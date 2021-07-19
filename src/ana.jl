@@ -60,9 +60,9 @@ function reco_hits(event::Integer, ecut::Number, pde::Number,
     # Select SiPMs with charge (q x PDE) about ecut
     qdfQ   = qdf[qdf.Q.>ecut,:]
     #select the id's of the sipms with charge above threshold
-    sids = qdfQ[!,:sensor_id]
+    #sids = qdfQ[!,:sensor_id]
     #compute positions
-    pos   = sipm_pos.((sxyzdf,),sids)
+    #pos   = sipm_pos.((sxyzdf,),sids)
     # return a hitdf DF (x,y,z,q)
     return sipm_xyzq(qdfQ, sxyzdf)
 end
@@ -167,16 +167,6 @@ function radial_correction(b::Hit, r::Float32, rsipm::Float32)
 	r2 = r / rsipm   # redial correction
 	return r2 * b.x, r2 * b.y, b.z
 end
-
-#
-# """
-# 	fphi(hdf::DataFrame)
-#
-# Compute Phi from (X,Y)
-# """
-# function fphi(hdf::DataFrame)
-# 	return atan.(hdf.y,hdf.x)
-# end
 
 
 """

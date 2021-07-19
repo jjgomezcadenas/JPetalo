@@ -15,26 +15,50 @@ digitize(x::Vector{Float64}, bins::LinRange{Float64}) = gdigitize(x, bins)
 digitize(x::Vector{Float32}, bins::LinRange{Float32}) = gdigitize(x, bins)
 digitize(x::Vector{Real}, bins::LinRange{Number}) = gdigitize(x, bins)
 
+# """
+#     hist1d(x, nbins, xl)
+#
+# return a 1d histogram and its corresponding graphics (plots)
+# """
+# function ghist1d(x, nbins, xl, xmin=-1e+9, xmax=1e+9)
+#     xx = in_range(x, xmin, xmax)
+#     h = fit(Histogram, xx, nbins=nbins)
+#     ph = plot(h)
+#     xlabel!(xl)
+#     ylabel!("frequency")
+#     return h, ph
+# end
+# hist1d(x::Vector{Float64}, nbins::Integer, xl::String,
+#        xmin::Float64=-1e+9, xmax::Float64=1e+9) = ghist1d(x, nbins, xl, xmin, xmax)
+# hist1d(x::Vector{Float32}, nbins::Integer, xl::String,
+#        xmin::Float32=-1e+9, xmax::Float32=1e+9) = ghist1d(x, nbins, xl, xmin, xmax)
+# hist1d(x::Vector{Int64}, nbins::Int64, xl::String,
+#         xmin::Int64=-1000000000, xmax::Int64=1000000000) = ghist1d(x, nbins, xl, xmin, xmax)
+
 """
     hist1d(x, nbins, xl)
 
 return a 1d histogram and its corresponding graphics (plots)
 """
-function ghist1d(x, nbins, xl, xmin=-1e+9, xmax=1e+9)
+function ghist1d(x, nbins, xmin=-1e+9, xmax=1e+9)
     xx = in_range(x, xmin, xmax)
     h = fit(Histogram, xx, nbins=nbins)
-    ph = plot(h)
-    xlabel!(xl)
-    ylabel!("frequency")
-    return h, ph
+    return h
 end
-hist1d(x::Vector{Float64}, nbins::Integer, xl::String,
-       xmin::Float64=-1e+9, xmax::Float64=1e+9) = ghist1d(x, nbins, xl, xmin, xmax)
-hist1d(x::Vector{Float32}, nbins::Integer, xl::String,
-       xmin::Float32=-1e+9, xmax::Float32=1e+9) = ghist1d(x, nbins, xl, xmin, xmax)
-hist1d(x::Vector{Int64}, nbins::Int64, xl::String,
-        xmin::Int64=-1000000000, xmax::Int64=1000000000) = ghist1d(x, nbins, xl, xmin, xmax)
 
+hist1d(x::Vector{Float64}, nbins::Integer,
+       xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
+
+hist1d(x::Vector{Float32}, nbins::Integer,
+       xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = ghist1d(x, nbins, xmin, xmax)
+
+hist1d(x::Vector{Float32}, nbins::Integer,
+       xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
+
+hist1d(x::Vector{Int64}, nbins::Int64,
+       xmin::Int64=-1000000000, xmax::Int64=1000000000) = ghist1d(x, nbins, xmin, xmax)
+
+       
 """
     hist2d(x,y, nbins, xl, yl)
 
@@ -92,7 +116,6 @@ histogrammed as a function of the average of variable x in each bin
 #     ndf[!, "x_std"] = bin_width ./2.0
 #     return ndf
 # end
-
 function gp1df(x, y, nbins)
     df = DataFrame(x =  x, y = y)                      # create the DF
     bins = LinRange(minimum(x), maximum(x), nbins)     # bins in x

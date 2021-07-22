@@ -1,16 +1,6 @@
 using DataFrames
 using Glob
-
-"""
-	rfq(q)
-radius-from-q function. The parameters of the straight line have been
-obtained from a fit to photoelectric data.
-"""
-function grfq(q)
-    return Float32(326.9 + 0.0226 * q)
-end
-rfq(q::Float32) = grfq(q)
-rfq(q::Float64) = grfq(q)
+using Maybe
 
 
 """
@@ -34,7 +24,7 @@ function recohits(event        ::Integer,
 				   waveform    ::DataFrame,
 				   ecut        ::Float32,
 				   pde         ::Float32,
-				   max_pes     ::Float32,
+				   max_pes     ::Integer,
 				   sigma_tof   ::Float32)
 
 
@@ -47,14 +37,14 @@ function recohits(event        ::Integer,
 				  if wfm[i, "sensor_id"] == qdf[j, "sensor_id"]
 					  @debug "wfm sensor_id " wfm[i, "sensor_id"]
 					  @debug "wfm q_sum " wfm[i, "q_sum"]
-					  @debug "qdf sensor_id " qdf[i, "sensor_id"]
-					  @debug "qdf charge " qdf[i, "charge"]
+					  @debug "qdf sensor_id " qdf[j, "sensor_id"]
+					  @debug "qdf charge " qdf[j, "charge"]
 
 					  wfm[i, "q_sum"] = qdf[j, "charge"] * pde
 					  j+=1
 					  nomatch=false
 				  else
-					  j+=2
+					  j+=1
 				  end
 			  end
 		  end
@@ -64,6 +54,9 @@ function recohits(event        ::Integer,
 
   	# select the waveform of this event
 	wfm = select_by_column_value(waveform, "event_id", event)
+	if nrow(wfm) == 0
+		return nothing
+	end
 
 	# add a column with probability of surviving pdf cut (pass if prob < pde)
 	wfm[!, "prob"] = rand(Float32, nrow(wfm))
@@ -76,6 +69,9 @@ function recohits(event        ::Integer,
 
 	# SiPM pass PDE cut if prob < PDE
 	wfmc = select_by_column_value_lt(wfm, "prob", pde)
+	if nrow(wfmc) == 0
+		return nothing
+	end
 
 	# add a column of gaussian random numbers representing the smearing of electronics and sensor
 	d    = Normal(0.0, sigma_tof)
@@ -106,6 +102,9 @@ function recohits(event        ::Integer,
 
 	#select the dataframe of total charge for this event
 	qdf = select_by_column_value(total_charge, "event_id", event)
+	if nrow(qdf) == 0
+		return nothing
+	end
 
 	@debug "total charge DF: size = $(size(qdf))"
 	@debug first(qdf, 5)
@@ -117,7 +116,9 @@ function recohits(event        ::Integer,
 	@debug first(qdf10, 5)
 
 	#sync the DataFrames: copy to wtmq SiPMs with charge > max_pes
-	sync!(wtmq, qdf10)
+	if nrow(qdf10) > 0
+		sync!(wtmq, qdf10)
+	end
 
 	@debug "data frame after sync: size = $(size(wtmq))"
 	@debug first(wtmq, 5)
@@ -154,12 +155,15 @@ end
 
 """
 	nema_analysis!(event       ::Integer,
+	                         rsipm       ::Float32,
 							 df1         ::DataFrame,
 							 df2         ::DataFrame,
 							 total_charge::DataFrame,
 							 sensor_xyz  ::DataFrame,
 							 waveform    ::DataFrame,
 							 ecut        ::Float32,
+							 qmin     ::Float32=1.400,
+							 qmax     ::Float32=3000.0,
 							 pde         ::Float32,
 							 max_pes     ::Float32,
 							 sigma_tof   ::Float32,
@@ -168,6 +172,7 @@ end
 Extracts the information needed for nema studies, including lors
 """
 function nema_analysis!(event       ::Integer,
+	                    rsipm       ::Float32,
 						 df1         ::DataFrame,
 						 df2         ::DataFrame,
 						 primaries   ::DataFrame,
@@ -175,9 +180,14 @@ function nema_analysis!(event       ::Integer,
 						 sensor_xyz  ::DataFrame,
 						 waveform    ::DataFrame,
 						 ecut        ::Float32,
+						 qmin        ::Float32,
+						 qmax        ::Float32,
+						 cq1         ::Float32,
+						 cq2         ::Float32,
 						 pde         ::Float32,
 						 max_pes     ::Integer,
 						 sigma_tof   ::Float32,
+						 ntof        ::Integer,
 						 lor_algo    ::Function,
 						 n3d         ::Dict)
 
@@ -197,11 +207,24 @@ function nema_analysis!(event       ::Integer,
 		 return xt1, xt2
 	end
 
+	# radius-from-q function. The parameters of the straight line have been
+	# obtained from a fit to photoelectric data.
+
+	function grfq(q::Float32)
+	    return cq1 + cq2 * q
+	end
+
 	# primaries
-	pdf = select_by_column_value(primaries, "event_id", event)
+	prim = select_by_column_value(primaries, "event_id", event)
+	@debug "Primaries in event:" prim
 	#hit dataframe
-	hitdf  = recohits(event, total_charge, sensor_xyz, waveform,
+	hitdf = recohits(event, total_charge, sensor_xyz, waveform,
 					  ecut, pde, max_pes, sigma_tof)
+
+	if hitdf == nothing
+		@warn "Warning, hidtf evaluates to nothing for event = $event"
+		return
+	end
 
 	if nrow(hitdf) < 2
 		@warn "Warning, hidtf is <2 for event = $event"
@@ -209,7 +232,7 @@ function nema_analysis!(event       ::Integer,
 	end
 
 	@info " hit dataframe: size = $size(hitdf)"
-	@info first(hitdf, 5)
+	@debug first(hitdf, 5)
 
 	# reconstruct (x,y) : barycenter
 	#b1, b2, hq1df, hq2df = lor_kmeans(hitdf)
@@ -224,18 +247,21 @@ function nema_analysis!(event       ::Integer,
 
 	@info " total charge: q1 = $q1, q2 = $q2"
 	if q1 < qmin || q1 > qmax
-		@warn "Warning, q1 is $q1 for event $event$"
+		@warn "Warning, q1 is $q1 for event $event"
 		return false
 	end
 	if q2 < qmin || q2 > qmax
-		@warn "Warning, q2 is $q2 for event $event$"
+		@warn "Warning, q2 is $q2 for event $event"
 		return false
 	end
 
 	# Compute phistd and zstd1
 	phistd1 = phistd(hq1df)
-	zstd1 = xyzstd(hq1df,"z")
+	zstd1   = xyzstd(hq1df,"z")
+	phistd2 = phistd(hq2df)
+	zstd2   = xyzstd(hq2df,"z")
 	@info " phistd1 = $phistd1, zstd1 = $zstd1"
+	@info " phistd2 = $phistd2, zstd1 = $zstd2"
 
 	# find true position (and correlate with barycenter)
 	xt1, xt2 = true_xyz(b1, b2, df1, df2)
@@ -265,17 +291,37 @@ function nema_analysis!(event       ::Integer,
 	@info " from rb1: xr1 = $xr1, yr1=$yr1, zr1=$zr1"
 	@info " from rb2: xr2 = $xr2, y1=$yr2, z1=$zr2"
 
-	t1 = hq1df.tmin
-	t2 = hq2df.tmin
+	# Find the sipm with the fastest time
+	t1 = minimum(hq1df.tmin)
+	t2 = minimum(hq2df.tmin)
+	tr1 = minimum(hq1df.trmin)
+	tr2 = minimum(hq2df.trmin)
+
+	ntof1 = min(ntof, nrow(hq1df))
+	ntof2 = min(ntof, nrow(hq2df))
+
+	# sort reco times in ascending order
+	t1s = sort(hq1df.trmin)
+	t2s = sort(hq2df.trmin)
+
+	# take average
+	ta1 = mean(t1s[1:ntof1])
+	ta2 = mean(t2s[1:ntof2])
+
+	ht1 = select_by_column_value(hq1df, "tmin", t1)
+	ht2 = select_by_column_value(hq2df, "tmin", t2)
+	htr1 = select_by_column_value(hq1df, "trmin", tr1)
+	htr2 = select_by_column_value(hq2df, "trmin", tr2)
+
 
 	# store data
 	#source data
-	push!(n3d["xs"],pdf.x)
-	push!(n3d["ys"],pdf.y)
-	push!(n3d["zs"],pdf.z)
-	push!(n3d["ux"],pdf.vx)
-	push!(n3d["uy"],pdf.vy)
-	push!(n3d["uz"],pdf.vz)
+	push!(n3d["xs"],prim.x[1])
+	push!(n3d["ys"],prim.y[1])
+	push!(n3d["zs"],prim.z[1])
+	push!(n3d["ux"],prim.vx[1])
+	push!(n3d["uy"],prim.vy[1])
+	push!(n3d["uz"],prim.vz[1])
 	# double hemisphere data (lors)
 	push!(n3d["xt1"],xt1[1])
 	push!(n3d["yt1"],xt1[2])
@@ -286,32 +332,48 @@ function nema_analysis!(event       ::Integer,
 	push!(n3d["x1"],x1)
 	push!(n3d["y1"],y1)
 	push!(n3d["z1"],z1)
-	push!(n3d["t1"],hq1df.tmin)
+	push!(n3d["t1"],t1)
 	push!(n3d["x2"],x2)
 	push!(n3d["y2"],y2)
 	push!(n3d["z2"],z2)
-	push!(n3d["t2"],hq2df.tmin)
-	push!(n3d["xr1"],x1)
-	push!(n3d["yr1"],y1)
-	push!(n3d["zr1"],z1)
-	push!(n3d["tr1"],hq1df.trmin)
-	push!(n3d["xr2"],x2)
-	push!(n3d["yr2"],y2)
-	push!(n3d["zr2"],z2)
-	push!(n3d["tr2"],hq2df.trmin)
+	push!(n3d["t2"],t2)
+	push!(n3d["xr1"],xr1)
+	push!(n3d["yr1"],yr1)
+	push!(n3d["zr1"],zr1)
+	push!(n3d["tr1"],tr1)
+	push!(n3d["xr2"],xr2)
+	push!(n3d["yr2"],yr2)
+	push!(n3d["zr2"],zr2)
+	push!(n3d["tr2"],tr2)
+	push!(n3d["ta1"],ta1)
+	push!(n3d["ta2"],ta2)
+	push!(n3d["xb1"],ht1.x[1])
+	push!(n3d["yb1"],ht1.y[1])
+	push!(n3d["zb1"],ht1.z[1])
+	push!(n3d["xb2"],ht2.x[1])
+	push!(n3d["yb2"],ht2.y[1])
+	push!(n3d["zb2"],ht2.z[1])
 
 	# single hemisphere data (control)
-	push!(n3d["nsipm"],nrow(hq1df))
-	push!(n3d["q"], sum(hq1df.q))
-	push!(n3d["r"],r1)
-	push!(n3d["rq"],rq1)
-	push!(n3d["phistd"],phistd1)
-	push!(n3d["zstd"],zstd1)
+	push!(n3d["nsipm1"],nrow(hq1df))
+	push!(n3d["q1"], sum(hq1df.q))
+	push!(n3d["r1"],r1)
+	push!(n3d["rq1"],r1q)
+	push!(n3d["phistd1"],phistd1)
+	push!(n3d["zstd1"],zstd1)
+
+	push!(n3d["nsipm2"],nrow(hq2df))
+	push!(n3d["q2"], sum(hq2df.q))
+	push!(n3d["r2"],r2)
+	push!(n3d["rq2"],r2q)
+	push!(n3d["phistd2"],phistd2)
+	push!(n3d["zstd2"],zstd2)
+
 
 end
 
 """
-	nemareco(files    ::Vector{String},
+	nemareco(files         ::Vector{String},
 				  file_i   ::Integer=1,
 				  file_l   ::Integer=1,
 				  pde      ::Float32=0.3,
@@ -320,9 +382,11 @@ end
 				  ecut     ::Float32=2.0,
 				  qmin     ::Float32=1.400,
 				  qmax     ::Float32=3000.0,
-				  prteach  ::Integer=100,
+				  cq1      ::Float32=297.9,
+				  cq2      ::Float32=0.0031,
+				  ntof     ::Integer = 5,
 				  phot     ::Bool=true,
-				  lor_algo ::Function=lor_algo)
+				  lor_algo ::Function=lor_maxq)
 
 Main driver for nema studies
 
@@ -336,24 +400,33 @@ function nemareco(files    ::Vector{String},
 				  ecut     ::Float32=2.0,
 				  qmin     ::Float32=1.400,
 				  qmax     ::Float32=3000.0,
-				  prteach  ::Integer=100,
+				  cq1      ::Float32=297.9,
+				  cq2      ::Float32=0.0031,
+				  ntof     ::Integer = 5,
 				  phot     ::Bool=true,
 				  lor_algo ::Function=lor_maxq)
 
 
 
 	# define data dictionary
-	n3d = Dict("nsipm"=>[0],
-	           "r"  =>[0.0], "phistd"=>[0.0],  "zstd"=>[0.0],
-			   "rq"  =>[0.0], "q" =>[0.0],
-			   "xs"=>[0.0], "ys"=>[0.0], "zs"=>[0.0],
-		       "ux"=>[0.0], "uy"=>[0.0], "ux"=>[0.0],
-	           "xt1"=>[0.0], "yt1"=>[0.0], "zt1"=>[0.0],
-		       "xt2"=>[0.0], "yt2"=>[0.0], "zt2"=>[0.0],
-               "x1"=>[0.0],   "y1"=>[0.0], "z1"=>[0.0],"t1"=>[0.0],
-               "x2"=>[0.0],   "y2"=>[0.0], "z2"=>[0.0], "t2"=>[0.0],
-			   "xr1"=>[0.0], "yr1"=>[0.0], "zr1"=>[0.0], "tr1"=>[0.0],
-               "xr2"=>[0.0], "yr2"=>[0.0], "zr2"=>[0.0], "tr2"=>[0.0])
+
+	n3d = Dict("nsipm1"=>[0],"nsipm2"=>[0],
+	           "r1"  =>[0.0f0], "phistd1"=>[0.0f0],  "zstd1"=>[0.0f0],
+			   "rq1"  =>[0.0f0], "q1" =>[0.0f0],
+		   	   "r2"  =>[0.0f0], "phistd2"=>[0.0f0],  "zstd2"=>[0.0f0],
+		   	   "rq2"  =>[0.0f0], "q2" =>[0.0f0],
+			   "xs"=>[0.0f0], "ys"=>[0.0f0], "zs"=>[0.0f0],
+		       "ux"=>[0.0f0], "uy"=>[0.0f0], "uz"=>[0.0f0],
+	           "xt1"=>[0.0f0], "yt1"=>[0.0f0], "zt1"=>[0.0f0],
+		       "xt2"=>[0.0f0], "yt2"=>[0.0f0], "zt2"=>[0.0f0],
+               "x1"=>[0.0f0],   "y1"=>[0.0f0], "z1"=>[0.0f0],"t1"=>[0.0f0],
+               "x2"=>[0.0f0],   "y2"=>[0.0f0], "z2"=>[0.0f0], "t2"=>[0.0f0],
+			   "xr1"=>[0.0f0], "yr1"=>[0.0f0], "zr1"=>[0.0f0], "tr1"=>[0.0f0],
+               "xr2"=>[0.0f0], "yr2"=>[0.0f0], "zr2"=>[0.0f0], "tr2"=>[0.0f0],
+			   "xb1"=>[0.0f0], "yb1"=>[0.0f0], "zb1"=>[0.0f0],
+			   "xb2"=>[0.0f0], "yb2"=>[0.0f0], "zb2"=>[0.0f0],
+			   "ta1"=>[0.0f0], "ta2"=>[0.0f0])
+
 
 	# read one file to compute the radius of sipm
 	pdf = read_abc(files[1])
@@ -375,17 +448,21 @@ function nemareco(files    ::Vector{String},
             	df2 = select_by_column_value(vdf, "track_id", 2)
 				if phot == true
             		if df1.process_id[1] == 1 && df2.process_id[1] == 1
-						nema_analysis!(event,
+						nema_analysis!(event, rsipm,
 						               df1, df2, pdf.primaries,
 									   pdf.total_charge, pdf.sensor_xyz, pdf.waveform,
-									   ecut, pde, max_pes, sigma_tof, lor_algo)
+									   ecut, qmin, qmax, cq1, cq2,
+									   pde, max_pes, sigma_tof, ntof,
+									   lor_algo, n3d)
 
         			end
 				else
-					nema_analysis!(event,
+					nema_analysis!(event, rsipm,
 								   df1, df2, pdf.primaries,
 								   pdf.total_charge, pdf.sensor_xyz, pdf.waveform,
-								   ecut, pde, max_pes, sigma_tof, lor_algo)
+								   ecut, qmin, qmax, cq1, cq2,
+								   pde, max_pes, sigma_tof, ntof,
+								   lor_algo, n3d)
 				end
 			end
     	end

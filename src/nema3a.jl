@@ -3,7 +3,7 @@ using Glob
 
 
 function grfq(q)
-    return Float32(326.9 + 0.0226 * q)
+    return Float32(297.9 + 0.031 * q)
 end
 rfq(q::Float32) = grfq(q)
 rfq(q::Float64) = grfq(q)

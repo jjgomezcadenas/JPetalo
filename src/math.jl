@@ -27,6 +27,14 @@ function phixy(x::Number,y::Number)
     return atan(y,x)
 end
 
+"""
+	phixy(x::Number,y::Number)
+	phi -> atan(y/x)
+"""
+function fphi(hitdf::DataFrame)
+    return atan.(hitdf.y,hitdf.x)
+end
+
 
 """
 	dxyz(x1::Vector{Number}, x2::Vector{Number})

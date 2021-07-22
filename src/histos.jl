@@ -3,6 +3,8 @@ using Statistics
 using StatsBase
 # histograms
 
+bigp=1.0e+10
+bign=-1.0e+10
 """
     digitize(x, bins)
 
@@ -15,50 +17,44 @@ digitize(x::Vector{Float64}, bins::LinRange{Float64}) = gdigitize(x, bins)
 digitize(x::Vector{Float32}, bins::LinRange{Float32}) = gdigitize(x, bins)
 digitize(x::Vector{Real}, bins::LinRange{Number}) = gdigitize(x, bins)
 
-# """
-#     hist1d(x, nbins, xl)
-#
-# return a 1d histogram and its corresponding graphics (plots)
-# """
-# function ghist1d(x, nbins, xl, xmin=-1e+9, xmax=1e+9)
-#     xx = in_range(x, xmin, xmax)
-#     h = fit(Histogram, xx, nbins=nbins)
-#     ph = plot(h)
-#     xlabel!(xl)
-#     ylabel!("frequency")
-#     return h, ph
-# end
-# hist1d(x::Vector{Float64}, nbins::Integer, xl::String,
-#        xmin::Float64=-1e+9, xmax::Float64=1e+9) = ghist1d(x, nbins, xl, xmin, xmax)
-# hist1d(x::Vector{Float32}, nbins::Integer, xl::String,
-#        xmin::Float32=-1e+9, xmax::Float32=1e+9) = ghist1d(x, nbins, xl, xmin, xmax)
-# hist1d(x::Vector{Int64}, nbins::Int64, xl::String,
-#         xmin::Int64=-1000000000, xmax::Int64=1000000000) = ghist1d(x, nbins, xl, xmin, xmax)
 
 """
     hist1d(x, nbins, xl)
 
 return a 1d histogram and its corresponding graphics (plots)
 """
-function ghist1d(x, nbins, xmin=-1e+9, xmax=1e+9)
+function ghist1d(x, nbins, xmin=bign, xmax=bigp)
     xx = in_range(x, xmin, xmax)
     h = fit(Histogram, xx, nbins=nbins)
     return h
 end
+function g2hist1d(x, xl, nbins, xmin=bign, xmax=bigp)
+    h = ghist1d(x, nbins, xmin, xmax)
+    p = plot(h, xlabel=xl, yl="frequency")
+    return h, p
+end
 
 hist1d(x::Vector{Float64}, nbins::Integer,
        xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
+hist1d(x::Vector{Float64}, xl::String, nbins::Integer,
+      xmin::Float64=bign, xmax::Float64=bigp) = g2hist1d(x, xl, nbins, xmin, xmax)
 
 hist1d(x::Vector{Float32}, nbins::Integer,
        xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = ghist1d(x, nbins, xmin, xmax)
+hist1d(x::Vector{Float32}, xl::String, nbins::Integer,
+      xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = g2hist1d(x, xl, nbins, xmin, xmax)
 
 hist1d(x::Vector{Float32}, nbins::Integer,
        xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
+hist1d(x::Vector{Float32}, xl::String, nbins::Integer,
+      xmin::Float64=bign, xmax::Float64=bigp) = g2hist1d(x, xl, nbins, xmin, xmax)
 
 hist1d(x::Vector{Int64}, nbins::Int64,
        xmin::Int64=-1000000000, xmax::Int64=1000000000) = ghist1d(x, nbins, xmin, xmax)
+hist1d(x::Vector{Int64}, xl::String, nbins::Int64,
+      xmin::Int64=-1000000000, xmax::Int64=1000000000) = g2hist1d(x, xl, nbins, xmin, xmax)
 
-       
+
 """
     hist2d(x,y, nbins, xl, yl)
 
@@ -68,7 +64,7 @@ function ghist2d(x,y, nbins, xl, yl,xmin=-1e+9, xmax=1e+9,ymin=-1e+9, ymax=1e+9)
     function xy(i)
         return diff(h.edges[i])/2 .+ h.edges[i][1:end-1]
     end
-    df = DataFrame(x=x,y=y)
+    df = DataFrame(x=y,y=x)
     df1 = JPetalo.select_by_column_value_interval(df, "x", xmin, xmax)
     df2 = JPetalo.select_by_column_value_interval(df1, "y", ymin, ymax)
     data = (df2.x, df2.y)

@@ -1,5 +1,6 @@
 using LinearAlgebra
 using GLM
+using LsqFit
 
 #linear fit wrapper
 
@@ -8,6 +9,58 @@ function lfit(ndf::DataFrame)
     c = coef(lr)
     return x -> c[1] + c[2]*x, predict(lr), c
 end
+
+function fit_pol2(x,y)
+    @. pol(x, p) = p[1] + p[2] * x + p[3] * x^2
+    p0 = [1.0, 1.0, 1.0]
+    fq = curve_fit(pol, x, y, p0)
+    cfq = coef(fq)
+    @info "coef(fq)" cfq
+    sfq = stderror(fq)
+    @info "std(fq)" sfq
+    @info "margin_of_error (90%)" margin_error(fq, 0.1)
+    @info " confidence_interval (90%)" confidence_interval(fq, 0.1)
+    return cfq
+end
+
+
+function gfit_gauss(x, xmin, xmax, bins=50)
+    function gausx(x, μ, σ, N)
+        return N * exp(-(x - μ)^2/(2*σ^2))
+    end
+
+    xmu, xstd = mean_std(x, xmin, xmax)
+    @debug xmu xstd
+
+    h = hist1d(x,  bins, xmin, xmax)
+    edges = collect(h.edges[1])
+    w = h.weights
+    c =[0.5 *(edges[i] + edges[i+1]) for i in 1:length(edges)-1]
+    @debug "histo" edges w c
+
+    @. gauss1(x, p) = p[1]* exp(-(x - xmu)^2/(2*xstd^2))
+    p0 = [1.0]
+    fq = curve_fit(gauss1, c, w, p0)
+    NN =coef(fq)[1][1]
+    @debug "gauss1" NN
+
+    @. gauss3(x, p) = p[1]* exp(-(x - p[2])^2/(2*p[3]^2))
+    p0 = [NN, xmu, xstd]
+    fq = curve_fit(gauss3, c, w, p0)
+    cfq = coef(fq)
+    @debug "coef(fq)" cfq
+    NN = cfq[1]
+    mu =cfq[2]
+    std  =cfq[3]
+    @debug "gauss3" NN mu std
+
+    return xmu, xstd, mu, std, NN, c, gausx.(c, (mu,), (std,), (NN),)
+end
+fit_gauss(x::Vector{Float64},
+          xmin::Float64, xmax::Float64, bins::Integer=50) = gfit_gauss(x, xmin, xmax, bins)
+fit_gauss(x::Vector{Float32},
+          xmin::Float32, xmax::Float32, bins::Integer=50) = gfit_gauss(x, xmin, xmax, bins)
+
 #misc math
 
 """

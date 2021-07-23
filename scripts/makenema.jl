@@ -12,51 +12,91 @@ using Logging
 logger = SimpleLogger(stdout, Logging.Warn)
 old_logger = global_logger(logger)
 
+# radius-from-q function. The parameters of the straight line have been
+# obtained from a fit to photoelectric data.
+
+function grfq(p::Vector{Float32})
+	function rfq(q)
+		return p[1] + p[2] * q
+	end
+	return rfq
+end
+
+# radius-from-zstd function. The parameters of the parabol have been
+# obtained from a fit to photoelectric data.
+
+function grfz(p::Vector{Float32})
+	function rfz(z)
+		return p[1] + p[2] * z + p[3] * z^2
+	end
+	return rfz
+end
 
 function makenema(args)
 
-	qc = Float32(args["qcut"])
-	pde = Float32(args["pde"])
-	qmin = Float32(args["qmin"])
-	qmax = Float32(args["qmax"])
-	cq1  = Float32(args["cq1"])
-	cq2  = Float32(args["cq2"])
-	maxpes = args["maxpes"]
-	ntof = args["ntof"]
-	sigmatof = Float32(args["sigmatof"])
-	lorf = args["loralgo"]
 
-	dr = datadir(args["dir"])
-	outd = datadir(args["odir"])
-	outf = args["ofile"]
-	file_i = args["filei"]
-	file_l = args["filel"]
+	lorf    = args["loralgo"]
+	detconf = args["detconf"]
+	phot    = args["phot"]
+	dr      = datadir(args["dir"])
+	outd    = datadir(args["odir"])
+	outf    = args["ofile"]
+	file_i  = args["filei"]
+	file_l  = args["filel"]
 
 	lor_algo = JPetalo.lor_kmeans
-
 	if lorf == "lor_qmax"
 		lor_algo = JPetalo.lor_maxq
 	end
 
 	output = string(outd,"/", outf)
 	files = glob("*.h5",dr)
-	phot =args["phot"]
+
+	if detconf == "pde_1_sigmatof_1ps"
+		pde  = 1.0f0
+		sigma_tof = 0.001f0
+		ecut = 10.0f0
+		qmin = 5200.0f0
+		qmax = 9000.0f0
+		max_pes = 10
+		ntof =5
+		rfq = grfq([315.1f0, 0.008f0])
+		rfz = grfq([392.5f0, 0.36f0, -0.065f0])
+		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
+	elseif detconf == "pde_0.3_sigmatof_1ps"
+		pde  = 0.3f0
+		sigma_tof = 0.001f0
+		ecut = 3.0f0
+		qmin = 1800.0f0
+		qmax = 3000.0f0
+		max_pes = 10
+		ntof =5
+		rfq = grfq([312.0f0, 0.027f0])
+		rfz = grfq([395.6f0, -0.19f0, -0.037f0])
+		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
+	elseif detconf == "pde_0.3_sigmatof_85ps"
+		pde  = 0.3f0
+		sigma_tof = 0.085f0
+		ecut = 3.0f0
+		qmin = 1800.0f0
+		qmax = 3000.0f0
+		max_pes = 10
+		ntof =5
+		rfq = grfq([312.0f0, 0.027f0])
+		rfz = grfq([395.6f0, -0.19f0, -0.037f0])
+		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
+	end
 
 	@info "makenema configuration"
-	@info "pde  = $pde sigma tof (ps) = $sigmatof maxpes=$maxpes"
-	@info "ecut (pes)  = $qc qmin (pes) = $qmin qmx (pes)=$qmax"
-	@info " r = f(q) parameters: cq1  = $cq1 cq2 = $cq2"
+	@info "detector configuration" dconf
 	@info " lor function cq1  = $lorf"
 	@info " photoelectric only  = $phot"
-
 
 	@info("number of files in data dir = $length(files)")
 	@info("reading = $(file_l - file_i + 1) files")
 	@info("output file  = $output")
 
-	n3df = JPetalo.nemareco(files, file_i, file_l,
-	                        pde, maxpes, sigmatof,
-	                        qc, qmin, qmax, cq1, cq2, ntof, phot, lor_algo)
+	n3df = JPetalo.nemareco(files, dconf, file_i, file_l, phot, lor_algo)
 
 	CSV.write(output, n3df)
 end
@@ -70,53 +110,6 @@ function parse_commandline()
             help = "directory with nema3 simulations"
             arg_type = String
             default = "nema3-vac-1m"
-		"--qcut", "-q"
-            help = "cut on q of SiPMs"
-			arg_type = Float64
-            default = 2.0
-		"--pde", "-p"
-            help = "PDE of SiPMs"
-			arg_type = Float64
-            default = 0.3
-		"--maxpes", "-s"
-			help = "max number of pes stores in a SiPM in the waveform"
-			arg_type = Int
-			default = 10
-		"--ntof", "-c"
-			help = "number of sipms for average"
-			arg_type = Int
-			default = 5
-		"--prteach", "-e"
-			help = "print each events"
-			arg_type = Int
-			default = 1000
-		"--sigmatof", "-t"
-			help = "smearing on TOF due to electronics and sensor"
-			arg_type = Float64
-			default = 0.085  # in ns
-		"--loralgo", "-g"
-			help = "algorithm to use for LOR reconstruction "
-			arg_type = String
-			default = "lor_kmeans"
-		"--qmin", "-m"
-			help = "qmin on SiPMs"
-			arg_type = Float64
-			default = 1800.
-		"--qmax", "-M"
-            help = "qmax on SiPMs"
-			arg_type = Float64
-            default = 3000.
-		"--cq1", "-I"
-            help = "intercept in function r =cq1 + cq2*q"
-			arg_type = Float64
-            default = 297.9
-		"--cq2", "-S"
-            help = "slope in function r =cq1 + cq2*q"
-			arg_type = Float64
-            default = 0.031
-		"--phot"
-	 		help = "Select photoelectric if 1"
-	 		action = :store_true
 		"--odir", "-o"
             help = "output directory"
             arg_type = String
@@ -133,6 +126,17 @@ function parse_commandline()
 		    help = "number of last file in glob list"
 		    default  = 1
 			arg_type = Int
+		"--loralgo", "-g"
+			help = "algorithm to use for LOR reconstruction "
+			arg_type = String
+			default = "lor_kmeans"
+		"--detconf", "-c"
+			help = "Detector configuration"
+			arg_type = String
+			default = "pde_1_sigmatof_1ps"
+		"--phot", "-p"
+			help = "Select photoelectric if 1"
+			action = :store_true
     end
 
     return parse_args(s)

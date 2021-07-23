@@ -42,3 +42,20 @@ struct Hit
 	z::Float32
 	q::Float32
 end
+
+"""
+	DetConf
+
+Defines detector configuration
+"""
+struct DetConf
+	pde::Float32
+	sigma_tof::Float32
+	ecut::Float32
+	qmin::Float32
+	qmax::Float32
+	max_pes::Integer
+	ntof::Integer
+	rfq::Function
+	rfz::Function
+end

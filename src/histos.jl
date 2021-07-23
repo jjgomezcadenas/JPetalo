@@ -65,8 +65,8 @@ function ghist2d(x,y, nbins, xl, yl,xmin=-1e+9, xmax=1e+9,ymin=-1e+9, ymax=1e+9)
         return diff(h.edges[i])/2 .+ h.edges[i][1:end-1]
     end
     df = DataFrame(x=y,y=x)
-    df1 = JPetalo.select_by_column_value_interval(df, "x", xmin, xmax)
-    df2 = JPetalo.select_by_column_value_interval(df1, "y", ymin, ymax)
+    df1 = JPetalo.select_by_column_value_interval(df, "y", xmin, xmax)
+    df2 = JPetalo.select_by_column_value_interval(df1, "x", ymin, ymax)
     data = (df2.x, df2.y)
     h = fit(Histogram, data, nbins=nbins)
     ye = xy(1)

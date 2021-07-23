@@ -83,6 +83,9 @@ function recohits(event        ::Integer,
 	@debug "waveform after prob cut and smeared time: size =$(size(wfmt))"
 	@debug first(wfmt, 5)
 
+	# Find the resolution (average difference beteen t1 and tr1)
+	trdt = mean(wfmt.time - wfmt.mtime)
+
 	# group by SiPMs and take minimum time
 	wtmin = combine(groupby(wfmt, :sensor_id), :time => minimum)
 
@@ -93,6 +96,8 @@ function recohits(event        ::Integer,
 	wrtmin = combine(groupby(wfmt, :sensor_id), :mtime => minimum)
 	@debug "waveform after grouping SiPMs and min reco time: size = $(size(wrtmin))"
 	@debug first(wrtmin, 5)
+
+	trmdt = mean(wtmin.time_minimum - wrtmin.mtime_minimum)
 
 	# group by SiPMs and compute the sum of the charge in the SiPMs
 	wtmq = combine(groupby(wfmt, :sensor_id), :q => sum)
@@ -124,7 +129,7 @@ function recohits(event        ::Integer,
 	@debug first(wtmq, 5)
 
 	#construct qt dataframe
-	  wfmx  = DataFrame(sensor_id=wtmq.sensor_id,
+	wfmx  = DataFrame(sensor_id=wtmq.sensor_id,
 					   tmin=wtmin.time_minimum,
 					   trmin=wrtmin.mtime_minimum,
 					   q=wtmq.q_sum)
@@ -195,6 +200,7 @@ function nema_analysis!(event       ::Integer,
 		 end
 		 return xt1, xt2
 	end
+
 
 	# primaries
 	prim = select_by_column_value(primaries, "event_id", event)
@@ -284,6 +290,7 @@ function nema_analysis!(event       ::Integer,
 	#@info " from rz: xR1 = $xR1, yR1=$yR1, zR1=$zR1"
 	#@info " from rz: xR2 = $xR2, yR2=$yR2, zR2=$zR2"
 
+
 	# Find the sipm with the fastest time
 	t1 = minimum(hq1df.tmin)
 	t2 = minimum(hq2df.tmin)
@@ -296,7 +303,6 @@ function nema_analysis!(event       ::Integer,
 	# sort reco times in ascending order
 	t1s = sort(hq1df.trmin)
 	t2s = sort(hq2df.trmin)
-
 	# take average
 	ta1 = mean(t1s[1:ntof1])
 	ta2 = mean(t2s[1:ntof2])
@@ -310,9 +316,18 @@ function nema_analysis!(event       ::Integer,
 	ht2 = select_by_column_value(hq2df, "tmin", t2)
 	htr1 = select_by_column_value(hq1df, "trmin", tr1)
 	htr2 = select_by_column_value(hq2df, "trmin", tr2)
+	# position of the SiPM with fastet signal.
+	xct1 = ht1.x[1]
+	yct1 = ht1.y[1]
+	zct1 = ht1.z[1]
+	xct2 = ht2.x[1]
+	yct2 = ht2.y[1]
+	zct2 = ht2.z[1]
+
 
 	# store data
 	#source data
+
 	push!(n3d["xs"],prim.x[1])
 	push!(n3d["ys"],prim.y[1])
 	push!(n3d["zs"],prim.z[1])

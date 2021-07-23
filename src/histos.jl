@@ -97,21 +97,6 @@ hist2d(x::Vector{Int64}, y::Vector{Int64}, nbins::Integer,
 return a profile DataFrame. This is a DF in which the variable y is
 histogrammed as a function of the average of variable x in each bin
 """
-# function gp1df(x, y, nbins)
-#     df = DataFrame(x =  x, y = y)                      # create the DF
-#     bins = LinRange(minimum(x), maximum(x), nbins)     # bins in x
-#     # bin x
-#     df[!, "bin"] = digitize(x, bins)
-#     bin_centers =[0.5 * (bins[i] + bins[i+1]) for i in 1:length(bins) -1]
-#     bin_width = [bins[i+1] - bins[i] for i in 1:length(bins) -1]
-#     # mean and std of y in binned x
-#     ymean = combine(groupby(df, :bin), :y => mean)
-#     ystd  = combine(groupby(df, :bin), :y => std)
-#     ndf   = innerjoin(ymean, ystd, on = :bin)
-#     ndf[!, "x_mean"] = bin_centers
-#     ndf[!, "x_std"] = bin_width ./2.0
-#     return ndf
-# end
 function gp1df(x, y, nbins)
     df = DataFrame(x =  x, y = y)                      # create the DF
     bins = LinRange(minimum(x), maximum(x), nbins)     # bins in x
@@ -133,3 +118,13 @@ p1df(x::Vector{Float32}, y::Vector{Float32},
      nbins::Integer)  = gp1df(x, y, nbins)
 p1df(x::Vector{Number}, y::Vector{Number},
      nbins::Integer)  = gp1df(x, y, nbins)
+
+"""
+    centers(h::Histogram)
+
+centers of the histogram 
+"""
+ function centers(h::Histogram)
+     edges = collect(h.edges[1])
+     return [0.5 *(edges[i] + edges[i+1]) for i in 1:length(edges)-1]
+ end

@@ -85,6 +85,18 @@ function makenema(args)
 		rfq = grfq([312.0f0, 0.027f0])
 		rfz = grfq([395.6f0, -0.19f0, -0.037f0])
 		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
+	else
+		pde  = 0.3f0
+		sigma_tof = 0.085f0
+		ecut = 3.0f0
+		qmin = 500.0f0
+		qmax = 3500.0f0
+		max_pes = 10
+		ntof =5
+		rfq = grfq([312.0f0, 0.027f0])
+		rfz = grfq([395.6f0, -0.19f0, -0.037f0])
+		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
+		phot = false 
 	end
 
 	@info "makenema configuration"
@@ -133,7 +145,7 @@ function parse_commandline()
 		"--detconf", "-c"
 			help = "Detector configuration"
 			arg_type = String
-			default = "pde_1_sigmatof_1ps"
+			default = "all"
 		"--phot", "-p"
 			help = "Select photoelectric if 1"
 			action = :store_true

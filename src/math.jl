@@ -94,9 +94,30 @@ function gausg2(μ1, σ1, C1, μ2, σ2, C2)
 	return gausx
 end
 
+@. gauss1fm(x, p) = p[1]* pdf(Normal(p[2], p[3]), x)
 @. gauss1(x, p) = p[1]* pdf(Normal(p[2], p[3]), x)
 @. gauss2(x, p) = p[1]* pdf(Normal(p[2], p[3]), x) +  p[4]* pdf(Normal(p[5], p[6]), x)
 
+function gaussfm(mu)
+	function gauss(x,p)
+		return @. p[1]* pdf(Normal(mu, p[2]), x)
+	end
+	return gauss
+end
+
+function gauss2fm(mu)
+	function gauss2(x,p)
+		return @. p[1]* pdf(Normal(mu, p[2]), x) + p[3]* pdf(Normal(mu, p[4]), x)
+	end
+	return gauss2
+end
+
+function gauss1fm(mu)
+    function gauss1(x,p)
+        return @. p[1]* pdf(Normal(mu, p[2]), x)
+    end
+    return gauss1
+end
 
 function cfit(ffit, x, y, p0, lb, ub)
 	fq = curve_fit(ffit, x, y, p0, lower=lb, upper=ub)
@@ -122,68 +143,153 @@ function hfit_gauss(h::Histogram)
 
 end
 
-function gfit_gauss(y, xmin, xmax, bins=25)
+function gfit_gauss_fm(y, xmin, xmax, bins=25, fm=0.0)
 
 	# fit the unbinned distribution
 	x  =  in_range(y, xmin, xmax)
-	ft =  fit(Normal,x)
-	@debug ft.μ ft.σ
+	σ = std(x)
+	@debug "gfit_gauss_fm: σ = $σ"
 
 	# bin distribution
     h = hist1d(x, bins, xmin, xmax)
     c = centers(h)
     w = h.weights
-    @debug "histo"  w c
+    @debug "histo w and c"  w c
 
 	# fit parameters lb, ub, po are lower, upper bounds and pars
-    lb = [1., ft.μ - 5*ft.σ, 0.1]
-    ub = [sum(w), ft.μ + 5*ft.σ, 5*ft.σ]
-    p0_bounds = [100., ft.μ, ft.σ]
-	CC, mu, sigma  = cfit(gauss1, c, w, p0_bounds, lb, ub)
+    lb = [sum(w)/50.0, σ/10.0]
+    ub = [sum(w),  σ * 10.0]
+    p0_bounds = [sum(w)/10.0, σ]
+
+	g1 = gaussfm(fm)
+	CC, sigma  = cfit(g1, c, w, p0_bounds, lb, ub)
+
+	@debug "CC,  sigma"  CC  sigma
+	gx = gausg(fm, sigma, CC)
+
+	return FGauss([fm], [sigma], [CC], h, c, gx.(c), [gx])
+end
+
+
+function gfit_gauss(y, xmin, xmax, bins=25, ff=gauss1)
+
+	# fit the unbinned distribution
+	x  =  in_range(y, xmin, xmax)
+	ft =  fit(Normal,x)
+	@debug "initial mean and std" ft.μ ft.σ
+
+	# bin distribution
+    h = hist1d(x, bins, xmin, xmax)
+    c = centers(h)
+    w = h.weights
+    @debug "histo w and c"  w c
+
+	# fit parameters lb, ub, po are lower, upper bounds and pars
+    lb = [sum(w)/50.0, ft.μ - 5*ft.σ, ft.σ/10.0]
+    ub = [sum(w), ft.μ + 5*ft.σ, 10*ft.σ]
+    p0_bounds = [sum(w)/10.0, ft.μ, ft.σ]
+	CC, mu, sigma  = cfit(ff, c, w, p0_bounds, lb, ub)
 	gx = gausg(mu, sigma, CC)
 
 	return FGauss([mu], [sigma], [CC], h, c, gx.(c), [gx])
 end
 
+"""
+	gfit_xgauss(y, xmin, xmax, bins=25, fm=0.0)
+	fits a gaussian with a fixed mean
+"""
+function gfit_xgauss(y, xmin, xmax, bins=25, fm=0.0)
 
-function gfit_gauss2(y, xmin, xmax, bins=25)
+    # fit the unbinned distribution
+    x  =  in_range(y, xmin, xmax)
+    mu, sigma =  mean_and_std(x)
+    @debug "initial std" sigma
 
-	# fit the unbinned distribution
-	x  =  in_range(y, xmin, xmax)
-	mu, sigma =  mean_and_std(x)
-	@debug " mu sigma " mu sigma
-
-	# bin distribution
+    # bin distribution
     h = hist1d(x, bins, xmin, xmax)
     c = centers(h)
     w = h.weights
-    @debug "histo"  w c
+    @debug "histo w and c"  w c
 
-	# fit parameters lb, ub, po are lower, upper bounds and pars
+    # fit parameters lb, ub, po are lower, upper bounds and pars
+    lb = [sum(w)/1000.0,  sigma/10.0]
+    ub = [sum(w)*1000.0, 10*sigma]
+    p0_bounds = [sum(w)/10.0, sigma]
 
-    p0 = [sum(w)/10.,  mu,           sigma,   sum(w)/10.,  mu,           sigma]
-	lb = [sum(w)/100., mu - 5*sigma, 0.1,     sum(w)/100., mu - 5*sigma, 0.1]
-    ub = [sum(w),      mu + 5*sigma, 5*sigma, sum(w),      mu + 5*sigma, 5*sigma]
-
-	fq = curve_fit(gauss2, c, w, p0, lower=lb, upper=ub)
-    CC1, mu1, sigma1, CC2, mu2, sigma2   = coef(fq)
+    ff = gauss1fm(fm)
+    fq = curve_fit(ff, c, w, p0_bounds, lower=lb, upper=ub)
+    cfq = coef(fq)
     @debug "coef(fq)" cfq
-	gx = gausg2(mu1, sigma1, CC1, mu2, sigma2, CC2)
-	gx1 = gausg(mu1, sigma1, CC1)
-	gx2 = gausg(mu2, sigma2, CC2)
+    CC, sigma  = coef(fq)
 
-	return FGauss([mu1, mu2], [sigma1, sigma2], [CC1, CC2], h, c, gx.(c), [gx1, gx2])
+    @debug "coef(fq)" CC  sigma
+    gx = gausg(fm, sigma, CC)
+
+    return (mu = fm, sigma = sigma, C = CC,
+            h = h, xg = c, yg = gx.(c), gx = gx)
+end
+
+"""
+	gfit_gauss2_cmean(y, xmin, xmax, bins, sigmas, cs, cmean=0.0)
+
+Fit a double gaussian (with sigmas -->[sigma1, sigma2] cs -->[c1, c2] )
+and a cmean to data.
+"""
+function gfit_gauss2_cmean(y, xmin, xmax, bins, sigmas, cs, cmean=0.0)
+
+    x =  in_range(y, xmin, xmax)
+    h = hist1d(x, bins, xmin, xmax)
+    c = centers(h)
+    w = h.weights
+    @debug "histo centers and weights in full region"  w c
+
+    g2 = gauss2fm(cmean)
+    # fit parameters lb, ub, po are lower, upper bounds and pars
+
+    lb = [cs[1]/10.0, sigmas[1]/3.0, cs[2]/10.0, sigmas[2]/3.0]
+    ub = [cs[1]*10.0, sigmas[1]*3.0, cs[2]*10.0, sigmas[2]*3.0]
+    p0_bounds = [cs[1], sigmas[1], cs[2], sigmas[2]]
+
+    @debug "pars" p0 lb ub
+    # fit double gaussian
+    fq = curve_fit(g2, c, w, p0_bounds, lower=lb, upper=ub)
+    C1, sigma1, C2,  sigma2   = coef(fq)
+    @debug "C1 sigma1 C2 sigma2" C1 sigma1 C2  sigma2
+
+    #
+    gx = gausg2(cmean, sigma1, C1, cmean, sigma2, C2)
+    gx1 = gausg(cmean, sigma1, C1)
+    gx2 = gausg(cmean, sigma2, C2)
+    return (sigma1 = sigma1, sigma2 = sigma2, C1 = C1, C2=C2,
+            h = h, xg = c, yg = gx.(c), gx = gx, gx1=gx1, gx2=gx2)
+    end
+
+"""
+	fit_2gauss_cmean(data, gp, g1p, g2p, cm)
+
+Fit two gaussian with common mean
+"""
+function fit_2gauss_cmean(data, gp, g1p, g2p, cm)
+    gf1 = gfit_xgauss(data, g1p.xmin,g1p.xmax,g1p.nbin, cm)
+    @debug gf1
+    gf2 = gfit_xgauss(data, g2p.xmin,g2p.xmax,g2p.nbin, cm)
+    @debug gf2
+    gf = gfit_gauss2_cmean(data, gp.xmin,gp.xmax,gp.nbin, [gf1.sigma, gf2.sigma], [gf1.C, gf2.C])
+    @debug gf
+    return gf
 end
 
 fit_gauss(x::Vector{Float64},
         xmin::Float64, xmax::Float64, bins::Integer=50) = gfit_gauss(x, xmin, xmax, bins)
 fit_gauss(x::Vector{Float32},
         xmin::Float32, xmax::Float32, bins::Integer=50) = gfit_gauss(x, xmin, xmax, bins)
-fit_gauss2(x::Vector{Float64},
-        xmin::Float64, xmax::Float64, bins::Integer=50) = gfit_gauss2(x, xmin, xmax, bins)
-fit_gauss2(x::Vector{Float32},
-        xmin::Float32, xmax::Float32, bins::Integer=50) = gfit_gauss2(x, xmin, xmax, bins)
 fit_gauss(h::Histogram) = hfit_gauss(h::Histogram)
+fit_gauss2(x::Vector{Float64},
+           xmin::Vector{Float64},
+		   xmax::Vector{Float64},
+		   bins::Vector{Int64}) = gfit_gauss2(x, xmin, xmax, bins)
+
+
 #misc math
 
 """

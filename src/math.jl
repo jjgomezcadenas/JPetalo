@@ -32,19 +32,9 @@ end
 
 Distance between two points.
 """
-function gdxyz(x1, x2)
+
+function dxyz(x1::Vector{T}, x2::Vector{T}) where T
     return sqrt((x1[1] - x2[1])^2 + (x1[2] - x2[2])^2 + (x1[3] - x2[3])^2)
-end
-
-
-function dxyz(x1::Vector{Float32}, x2::Vector{Float32})
-    return gdxyz(x1, x2)
-end
-function dxyz(x1::Vector{Float64}, x2::Vector{Float64})
-    return gdxyz(x1, x2)
-end
-function dxyz(x1::Vector{Int64}, x2::Vector{Int64})
-    return gdxyz(x1, x2)
 end
 
 

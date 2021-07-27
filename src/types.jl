@@ -1,4 +1,19 @@
 #TYPES
+using PhysicalConstants
+using PhysicalConstants.CODATA2018
+using Unitful
+
+import Unitful:
+    nm, μm, mm, cm, m, km, inch, ft, mi,
+    ac,
+    mg, g, kg,
+    Ra, °F, °C, K,
+    rad, °,
+    ns, μs, ms, ps, s, minute, hr, d, yr, Hz,
+    eV,
+    μJ, mJ, J,
+	mW, μW, W,
+    A, N, mol, mmol, V, L, mL, μL, M
 
 """
 	TrueHits

@@ -22,14 +22,13 @@ end
 Struct representing a LOR
 """
 struct MlemLor
-	t1::Float32
-	t2::Float32
-	x1::Float32
-	y1::Float32
-	z1::Float32
-	x2::Float32
-	y2::Float32
-	z2::Float32
+    dx::Float32
+    x1::Float32
+    y1::Float32
+    z1::Float32
+    x2::Float32
+    y2::Float32
+    z2::Float32
 end
 
 
@@ -94,36 +93,34 @@ end
 """
 function write_lors_hdf5(filename, mlor)
 
-	function set_datatype(::Type{MlemLor})
-		dtype = HDF5.h5t_create(HDF5.H5T_COMPOUND, sizeof(MlemLor))
-		HDF5.h5t_insert(dtype, "t1", fieldoffset(MlemLor, 1),
-			            datatype(Float32))
-		HDF5.h5t_insert(dtype, "t2", fieldoffset(MlemLor, 2),
-			            datatype(Float32))
-		HDF5.h5t_insert(dtype, "x1", fieldoffset(MlemLor, 3),
-			            datatype(Float32))
-		HDF5.h5t_insert(dtype, "y1", fieldoffset(MlemLor, 4),
-			            datatype(Float32))
-		HDF5.h5t_insert(dtype, "z1", fieldoffset(MlemLor, 5),
-			            datatype(Float32))
-		HDF5.h5t_insert(dtype, "x2", fieldoffset(MlemLor, 6),
-			            datatype(Float32))
-		HDF5.h5t_insert(dtype, "y2", fieldoffset(MlemLor, 7),
-			            datatype(Float32))
-		HDF5.h5t_insert(dtype, "z2", fieldoffset(MlemLor, 8),
-			            datatype(Float32))
+    function set_datatype(::Type{MlemLor})
+        dtype = HDF5.h5t_create(HDF5.H5T_COMPOUND, sizeof(MlemLor))
+        HDF5.h5t_insert(dtype, "dx", fieldoffset(MlemLor, 1),
+                        datatype(Float32))
+        HDF5.h5t_insert(dtype, "x1", fieldoffset(MlemLor, 2),
+                        datatype(Float32))
+        HDF5.h5t_insert(dtype, "y1", fieldoffset(MlemLor, 3),
+                        datatype(Float32))
+        HDF5.h5t_insert(dtype, "z1", fieldoffset(MlemLor, 4),
+                        datatype(Float32))
+        HDF5.h5t_insert(dtype, "x2", fieldoffset(MlemLor, 5),
+                        datatype(Float32))
+        HDF5.h5t_insert(dtype, "y2", fieldoffset(MlemLor, 6),
+                        datatype(Float32))
+        HDF5.h5t_insert(dtype, "z2", fieldoffset(MlemLor, 7),
+                        datatype(Float32))
 
-		HDF5.Datatype(dtype)
-	end
+        HDF5.Datatype(dtype)
+    end
 
-	h5f = h5open(filename, "w")
+    h5f = JPetalo.h5open(filename, "w")
 
-	dtype = set_datatype(MlemLor)
-	dspace = dataspace(mlor)
-	grp = create_group(h5f, "true_info")
-	dset = create_dataset(grp, "lors", dtype, dspace)
-	write_dataset(dset, dtype, mlor)
+    dtype = set_datatype(MlemLor)
+    dspace = dataspace(mlor)
+    grp = create_group(h5f, "true_info")
+    dset = create_dataset(grp, "lors", dtype, dspace)
+    write_dataset(dset, dtype, mlor)
 
 
-	close(h5f)
+    close(h5f)
 end

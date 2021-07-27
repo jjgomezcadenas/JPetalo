@@ -89,7 +89,7 @@ Since MlemLor will be written to file, remove units (e.g, use implicit units, in
 case mm) and transform to Float32
 """
 function dftolor(df::DataFrame, t::String="first", position::String="true", nlxe::Number=1.6)
-    
+
     function tof32(l)
         Float32.(l/mm)
     end
@@ -105,7 +105,7 @@ function dftolor(df::DataFrame, t::String="first", position::String="true", nlxe
         x1, x2, y1, y2, z1, z2 = df.x1,  df.x2,  df.y1,  df.y2,  df.z1,  df.z2
     end
 
-    MlemLor.(tof32(dx),tof32(x1),tof32(y1),tof32(z1), tof32(x2), tof32(y2), tof32(z2))
+    MlemLor.(tof32(-dx),tof32(x1),tof32(y1),tof32(z1), tof32(x2), tof32(y2), tof32(z2))
 end
 
 """

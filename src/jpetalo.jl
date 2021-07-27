@@ -5,7 +5,7 @@ include("math.jl")
 include("io.jl")
 include("ana.jl")
 include("nemareco.jl")
-#include("lors.jl")
+include("fits.jl")
 include("plots.jl")
 include("histos.jl")
 end

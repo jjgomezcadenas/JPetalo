@@ -317,12 +317,12 @@ function nema_analysis!(event       ::Integer,
 	htr1 = select_by_column_value(hq1df, "trmin", tr1)
 	htr2 = select_by_column_value(hq2df, "trmin", tr2)
 	# position of the SiPM with fastet signal.
-	xct1 = ht1.x[1]
-	yct1 = ht1.y[1]
-	zct1 = ht1.z[1]
-	xct2 = ht2.x[1]
-	yct2 = ht2.y[1]
-	zct2 = ht2.z[1]
+	# xct1 = ht1.x[1]
+	# yct1 = ht1.y[1]
+	# zct1 = ht1.z[1]
+	# xct2 = ht2.x[1]
+	# yct2 = ht2.y[1]
+	# zct2 = ht2.z[1]
 
 
 	# store data

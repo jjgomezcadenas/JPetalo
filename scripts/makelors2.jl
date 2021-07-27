@@ -1,7 +1,10 @@
 push!(LOAD_PATH,"../src/")
 using DrWatson
 @quickactivate "JPetalo"
-include("../src/jpetalo.jl")
+include("../src/JPetalo.jl")
+
+import .JPetalo: Dtsel, dtfirst, dtminimum, dtaverage, postrue, posreco
+import .JPetalo: Possel, setunits, dftolor, write_lors_hdf5
 
 using DataFrames
 using CSV
@@ -12,7 +15,8 @@ using Logging
 logger = SimpleLogger(stdout, Logging.Warn)
 old_logger = global_logger(logger)
 
-
+dtselmap =Dict("dtfirst"=>dtfirst, "dtminimum"=>dtminimum, "dtaverage"=>dtaverage)
+posselmap =Dict("postrue"=>postrue, "posreco"=>posreco)
 
 function makelors(args)
 
@@ -24,34 +28,36 @@ function makelors(args)
 	file_i = args["filei"]
 	file_l = args["filel"]
 	odir   = args["odir"]
+	outf   = args["ofile"]
+	selt   = dtselmap[args["selt"]]
+	selp   = posselmap[args["selpos"]]
 
+	output = string(odir,"/", outf)
+
+	LORS = []
 	for file in files[file_i:file_l]               # loop on files
 		@info "reading file = $file"
+		evtdfu = setunits(DataFrame(CSV.File(file)))
+		lors   = dftolor(evtdfu, selt, selp)
+		push!(LORS, lors)
+	end
 
-		n3df  = DataFrame(CSV.File(file))
-		n3dfu = setunits(n3df)
-
-
-
-	mtl   = df_to_mlemlor(tldf)
-	mrlb  = df_to_mlemlor(rlbdf)
-	mrlr  = df_to_mlemlor(rlrdf)
-
-	smtl  = string(odir,"/tl_",file_i,"_", file_l, ".h5")
-	smrlb = string(odir,"/rlb_",file_i,"_", file_l, ".h5")
-	smrlr = string(odir,"/rlr_",file_i,"_", file_l, ".h5")
-
-	JPetalo.write_lors_hdf5(datadir(smtl), mtl)
-	JPetalo.write_lors_hdf5(datadir(smrlb), mrlb)
-	JPetalo.write_lors_hdf5(datadir(smrlr), mrlr)
+	write_lors_hdf5(datadir(output), reduce(vcat, LORS))
 
 end
-
 
 function parse_commandline()
     s = ArgParseSettings()
 
     @add_arg_table s begin
+        "--selt", "-t"
+            help = "select time to be used in lor (dtfirst, dtmimimum, dtaverage)"
+            arg_type = String
+            default = "dtfirst"
+        "--selpos", "-p"
+            help = "select position to be used in lor (postrue, posreco)"
+            arg_type = String
+            default = "postrue"
         "--dir", "-d"
             help = "directory with nema dfs"
             arg_type = String
@@ -60,7 +66,6 @@ function parse_commandline()
             help = "output directory"
             arg_type = String
             default = "lorsall"
-
 		"--filei", "-i"
 	        help = "number of initial file in glob list"
 	        default  = 1
@@ -69,6 +74,11 @@ function parse_commandline()
 		    help = "number of last file in glob list"
 		    default  = 1
 			arg_type = Int
+		"--ofile", "-x"
+            help = "output file"
+            arg_type = String
+            default = "lors.h5"
+
     end
 
     return parse_args(s)

@@ -6,7 +6,7 @@ include("io.jl")
 include("ana.jl")
 include("nemareco.jl")
 include("fits.jl")
-include("dftlor.jl")
+include("dftolor.jl")
 include("plots.jl")
 include("histos.jl")
 end

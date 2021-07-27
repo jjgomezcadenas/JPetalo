@@ -15,8 +15,8 @@ using Logging
 logger = SimpleLogger(stdout, Logging.Warn)
 old_logger = global_logger(logger)
 
-dtselmap =Dict("dtfirst"=>dtfirst, "dtminimum"=>dtminimum, "dtaverage"=>dtaverage)
-posselmap =Dict("postrue"=>postrue, "posreco"=>posreco)
+dtselmap =Dict("first"=>dtfirst, "minimum"=>dtminimum, "average"=>dtaverage)
+posselmap =Dict("true"=>postrue, "reco"=>posreco)
 
 function makelors(args)
 
@@ -32,7 +32,8 @@ function makelors(args)
 	selt   = dtselmap[args["selt"]]
 	selp   = posselmap[args["selpos"]]
 
-	output = string(odir,"/", outf)
+	output = string(odir,"/", outf, "-", args["selt"], "-", args["selpos"], ".h5")
+	println("writing output to $output")
 
 	LORS = []
 	for file in files[file_i:file_l]               # loop on files
@@ -53,19 +54,19 @@ function parse_commandline()
         "--selt", "-t"
             help = "select time to be used in lor (dtfirst, dtmimimum, dtaverage)"
             arg_type = String
-            default = "dtfirst"
+            default = "first"
         "--selpos", "-p"
             help = "select position to be used in lor (postrue, posreco)"
             arg_type = String
-            default = "postrue"
+            default = "true"
         "--dir", "-d"
             help = "directory with nema dfs"
             arg_type = String
-            default = "nema3all"
+            default = "evtdfall"
 		"--odir", "-o"
             help = "output directory"
             arg_type = String
-            default = "lorsall"
+            default = "lors"
 		"--filei", "-i"
 	        help = "number of initial file in glob list"
 	        default  = 1
@@ -75,9 +76,9 @@ function parse_commandline()
 		    default  = 1
 			arg_type = Int
 		"--ofile", "-x"
-            help = "output file"
+            help = "output file prefix"
             arg_type = String
-            default = "lors.h5"
+            default = "all"
 
     end
 

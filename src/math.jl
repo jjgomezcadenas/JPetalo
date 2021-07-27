@@ -5,7 +5,7 @@ using StatsBase
 	rxy(x::Number,y::Number)
 	r -> sqrt{x^2 + y^2}
 """
-function rxy(x::Number,y::Number)
+function rxy(x::T,y::T) where T
     return sqrt(x^2 + y^2)
 end
 
@@ -14,7 +14,7 @@ end
 	phixy(x::Number,y::Number)
 	phi -> atan(y/x)
 """
-function phixy(x::Number,y::Number)
+function phixy(x::T,y::T) where T
     return atan(y,x)
 end
 

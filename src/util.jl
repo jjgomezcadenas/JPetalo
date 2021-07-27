@@ -5,20 +5,6 @@ using GLM
 
 # Vector and data frames
 
-"""
-	in_range(x, xmin, xmax)
-
-Given vector x, select values between xmin and xmax
-"""
-function gin_range(x, xmin, xmax)
-    xi = x[x.>xmin]
-    xu = xi[xi.<xmax]
-    return xu
-end
-in_range(x::Vector{Float64}, xmin::Float64, xmax::Float64) = gin_range(x, xmin, xmax)
-in_range(x::Vector{Float32}, xmin::Float32, xmax::Float32) = gin_range(x, xmin, xmax)
-in_range(x::Vector{Float32}, xmin::Float64, xmax::Float64) = gin_range(x, xmin, xmax)
-in_range(x::Vector{Int64}, xmin::Int64, xmax::Int64) = gin_range(x, xmin, xmax)
 
 """
 	select_event(dbdf::DataFrame, index::Int64)

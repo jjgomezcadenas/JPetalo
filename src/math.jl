@@ -37,7 +37,6 @@ function dxyz(x1::Vector{T}, x2::Vector{T}) where T
     return sqrt((x1[1] - x2[1])^2 + (x1[2] - x2[2])^2 + (x1[3] - x2[3])^2)
 end
 
-
 """
 function gwstd(x, q)
 

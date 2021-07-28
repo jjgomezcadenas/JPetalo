@@ -1,5 +1,6 @@
 push!(LOAD_PATH,"../src/")
 using DrWatson
+#@quickactivate(@__DIR__)
 @quickactivate "JPetalo"
 include("../src/JPetalo.jl")
 
@@ -8,6 +9,7 @@ using CSV
 using Glob
 using ArgParse
 using Logging
+using Printf
 
 logger = SimpleLogger(stdout, Logging.Warn)
 old_logger = global_logger(logger)
@@ -100,14 +102,14 @@ function makenema(args)
 		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
 	end
 
-	@info "makenema configuration"
-	@info "detector configuration" dconf
-	@info " lor function cq1  = $lorf"
-	@info " photoelectric only  = $phot"
+	println("makenema configuration")
+	println("data in", datadir())
+	println("detector configuration", dconf)
+	println(" photoelectric only  = $phot")
 
-	@info("number of files in data dir = $length(files)")
-	@info("reading = $(file_l - file_i + 1) files")
-	@info("output file  = $output")
+	println("number of files in data dir = $length(files)")
+	println("reading = $(file_l - file_i + 1) files")
+	println("output file  = $output")
 
 	n3df = JPetalo.nemareco(files, dconf, file_i, file_l, phot, lor_algo)
 

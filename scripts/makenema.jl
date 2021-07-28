@@ -94,7 +94,7 @@ function makenema(args)
 		pde  = 0.3f0
 		sigma_tof = 0.085f0
 		ecut = 3.0f0
-		qmin = 500.0f0
+		qmin = 100.0f0
 		qmax = 3500.0f0
 		max_pes = 10
 		ntof =5
@@ -107,6 +107,7 @@ function makenema(args)
 	println("data in", datadir())
 	println("detector configuration", dconf)
 	println(" photoelectric only  = $phot")
+	println(" lor_algo  = $lorf")
 
 	println("number of files in data dir = $(length(files))")
 	println("reading = $(file_l - file_i + 1) files")

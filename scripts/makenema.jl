@@ -1,7 +1,8 @@
 push!(LOAD_PATH,"../src/")
 using DrWatson
 #@quickactivate(@__DIR__)
-@quickactivate "JPetalo"
+#@quickactivate "JPetalo"
+quickactivate("../.", "JPetalo")
 include("../src/JPetalo.jl")
 
 using DataFrames
@@ -107,7 +108,7 @@ function makenema(args)
 	println("detector configuration", dconf)
 	println(" photoelectric only  = $phot")
 
-	println("number of files in data dir = $length(files)")
+	println("number of files in data dir = $(length(files))")
 	println("reading = $(file_l - file_i + 1) files")
 	println("output file  = $output")
 

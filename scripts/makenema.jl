@@ -1,7 +1,7 @@
 push!(LOAD_PATH,"../src/")
 using DrWatson
 @quickactivate "JPetalo"
-include("../src/jpetalo.jl")
+include("../src/JPetalo.jl")
 
 using DataFrames
 using CSV

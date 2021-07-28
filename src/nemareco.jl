@@ -235,21 +235,21 @@ function nema_analysis!(event       ::Integer,
 
 	@info " total charge: q1 = $q1, q2 = $q2"
 	if q1 < dc.qmin || q1 > dc.qmax
-		@warn "Warning, q1 is $q1 for event $event"
+		@info "Warning, q1 is $q1 for event $event"
 		return false
 	end
 	if q2 < dc.qmin || q2 > dc.qmax
-		@warn "Warning, q2 is $q2 for event $event"
+		@info "Warning, q2 is $q2 for event $event"
 		return false
 	end
 
 	# Compute phistd and zstd1
-	#phistd1 = phistd(hq1df)
-	#zstd1   = xyzstd(hq1df,"z")
-	#phistd2 = phistd(hq2df)
-	#zstd2   = xyzstd(hq2df,"z")
-	#@info " phistd1 = $phistd1, zstd1 = $zstd1"
-	#@info " phistd2 = $phistd2, zstd2 = $zstd2"
+	phistd1 = phistd(hq1df)
+	zstd1   = xyzstd(hq1df,"z")
+	phistd2 = phistd(hq2df)
+	zstd2   = xyzstd(hq2df,"z")
+	@info " phistd1 = $phistd1, zstd1 = $zstd1"
+	@info " phistd2 = $phistd2, zstd2 = $zstd2"
 
 	# find true position (and correlate with barycenter)
 	xt1, xt2 = true_xyz(b1, b2, df1, df2)
@@ -316,14 +316,6 @@ function nema_analysis!(event       ::Integer,
 	ht2 = select_by_column_value(hq2df, "tmin", t2)
 	htr1 = select_by_column_value(hq1df, "trmin", tr1)
 	htr2 = select_by_column_value(hq2df, "trmin", tr2)
-	# position of the SiPM with fastet signal.
-	# xct1 = ht1.x[1]
-	# yct1 = ht1.y[1]
-	# zct1 = ht1.z[1]
-	# xct2 = ht2.x[1]
-	# yct2 = ht2.y[1]
-	# zct2 = ht2.z[1]
-
 
 	# store data
 	#source data
@@ -378,16 +370,16 @@ function nema_analysis!(event       ::Integer,
 	push!(n3d["r1"],r1)
 	push!(n3d["r1q"],r1q)
 	#push!(n3d["r1z"],r1z)
-	#push!(n3d["phistd1"],phistd1)
-	#push!(n3d["zstd1"],zstd1)
+	push!(n3d["phistd1"],phistd1)
+	push!(n3d["zstd1"],zstd1)
 
 	push!(n3d["nsipm2"],nrow(hq2df))
 	push!(n3d["q2"], sum(hq2df.q))
 	push!(n3d["r2"],r2)
 	push!(n3d["r2q"],r2q)
 	#push!(n3d["r2z"],r2z)
-	#push!(n3d["phistd2"],phistd2)
-	#push!(n3d["zstd2"],zstd2)
+	push!(n3d["phistd2"],phistd2)
+	push!(n3d["zstd2"],zstd2)
 
 end
 
@@ -423,9 +415,9 @@ function nemareco(files    ::Vector{String},
 			   "q1" =>[0.0f0],   "q2" =>[0.0f0],
 	           "r1"  =>[0.0f0],  "r2"  =>[0.0f0],
 			   "r1q"  =>[0.0f0], "r2q"  =>[0.0f0],
-			   #"phistd1"=>[0.0f0],  "zstd1"=>[0.0f0],
+			   "phistd1"=>[0.0f0],  "zstd1"=>[0.0f0],
 			    #"r1z"  =>[0.0f0],
-			   #"phistd2"=>[0.0f0],  "zstd2"=>[0.0f0],
+			   "phistd2"=>[0.0f0],  "zstd2"=>[0.0f0],
 		   	   #"r2z"  =>[0.0f0],
 			   "xs"=>[0.0f0], "ys"=>[0.0f0], "zs"=>[0.0f0],
 		       "ux"=>[0.0f0], "uy"=>[0.0f0], "uz"=>[0.0f0],

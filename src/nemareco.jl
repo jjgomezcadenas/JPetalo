@@ -384,20 +384,12 @@ function nema_analysis!(event       ::Integer,
 end
 
 """
-	nemareco(files         ::Vector{String},
-				  file_i   ::Integer=1,
-				  file_l   ::Integer=1,
-				  pde      ::Float32=0.3,
-				  max_pes  ::Integer=10,
-				  sigma_tof::Float32=0.085,
-				  ecut     ::Float32=2.0,
-				  qmin     ::Float32=1.400,
-				  qmax     ::Float32=3000.0,
-				  cq1      ::Float32=297.9,
-				  cq2      ::Float32=0.0031,
-				  ntof     ::Integer = 5,
-				  phot     ::Bool=true,
-				  lor_algo ::Function=lor_maxq)
+	function nemareco(files    ::Vector{String},
+					  dconf    ::DetConf,
+		              file_i   ::Integer=1,
+					  file_l   ::Integer=1,
+					  phot     ::Bool=true,
+					  lor_algo ::Function=lor_maxq)
 
 Main driver for nema studies
 

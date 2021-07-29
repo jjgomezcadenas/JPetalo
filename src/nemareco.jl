@@ -333,13 +333,13 @@ function nema_analysis!(event       ::Integer,
 	push!(n3d["xt2"],xt2[1])
 	push!(n3d["yt2"],xt2[2])
 	push!(n3d["zt2"],xt2[3])
-	#push!(n3d["x1"],x1)
-	#push!(n3d["y1"],y1)
-	#push!(n3d["z1"],z1)
+	push!(n3d["x1"],x1)
+	push!(n3d["y1"],y1)
+	push!(n3d["z1"],z1)
 	push!(n3d["t1"],t1)
-	#push!(n3d["x2"],x2)
-	#push!(n3d["y2"],y2)
-	#push!(n3d["z2"],z2)
+	push!(n3d["x2"],x2)
+	push!(n3d["y2"],y2)
+	push!(n3d["z2"],z2)
 	push!(n3d["t2"],t2)
 	push!(n3d["xr1"],b1.x)
 	push!(n3d["yr1"],b1.y)
@@ -406,8 +406,8 @@ function nemareco(files    ::Vector{String},
 		       "ux"=>[0.0f0], "uy"=>[0.0f0], "uz"=>[0.0f0],
 	           "xt1"=>[0.0f0], "yt1"=>[0.0f0], "zt1"=>[0.0f0],"t1"=>[0.0f0],
 		       "xt2"=>[0.0f0], "yt2"=>[0.0f0], "zt2"=>[0.0f0], "t2"=>[0.0f0],
-               #"x1"=>[0.0f0],   "y1"=>[0.0f0], "z1"=>[0.0f0],"t1"=>[0.0f0],
-               #"x2"=>[0.0f0],   "y2"=>[0.0f0], "z2"=>[0.0f0], "t2"=>[0.0f0],
+               "x1"=>[0.0f0],   "y1"=>[0.0f0], "z1"=>[0.0f0],
+               "x2"=>[0.0f0],   "y2"=>[0.0f0], "z2"=>[0.0f0], 
 			   "xr1"=>[0.0f0], "yr1"=>[0.0f0], "zr1"=>[0.0f0], "tr1"=>[0.0f0],
 			   #"xR1"=>[0.0f0], "yR1"=>[0.0f0], "zR1"=>[0.0f0],
                "xr2"=>[0.0f0], "yr2"=>[0.0f0], "zr2"=>[0.0f0], "tr2"=>[0.0f0],

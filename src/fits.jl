@@ -173,8 +173,8 @@ function gfit_xgauss(y, xmin, xmax, bins=25, fm=0.0)
     @debug "histo w and c"  w c
 
     # fit parameters lb, ub, po are lower, upper bounds and pars
-    lb = [sum(w)/10000.0,  sigma/10.0]
-    ub = [sum(w)*10000.0, 10*sigma]
+    lb = [sum(w)/100000.0,  sigma/10.0]
+    ub = [sum(w)*100000.0, 10*sigma]
     p0_bounds = [sum(w)/10.0, sigma]
 
     ff = gauss1fm(fm)

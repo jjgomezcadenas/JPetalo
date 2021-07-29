@@ -10,12 +10,12 @@ bign=-1.0e+10
 
 Return the index of the element in the array
 """
-function gdigitize(x, bins)
+function digitize(x::Vector{T}, bins::LinRange{T}) where T
     return searchsortedlast.(Ref(bins), x)
 end
-digitize(x::Vector{Float64}, bins::LinRange{Float64}) = gdigitize(x, bins)
-digitize(x::Vector{Float32}, bins::LinRange{Float32}) = gdigitize(x, bins)
-digitize(x::Vector{Real}, bins::LinRange{Number}) = gdigitize(x, bins)
+#digitize(x::Vector{Float64}, bins::LinRange{Float64}) = gdigitize(x, bins)
+#digitize(x::Vector{Float32}, bins::LinRange{Float32}) = gdigitize(x, bins)
+#digitize(x::Vector{Real}, bins::LinRange{Number}) = gdigitize(x, bins)
 
 
 """
@@ -122,7 +122,7 @@ p1df(x::Vector{Number}, y::Vector{Number},
 """
     centers(h::Histogram)
 
-centers of the histogram 
+centers of the histogram
 """
  function centers(h::Histogram)
      edges = collect(h.edges[1])

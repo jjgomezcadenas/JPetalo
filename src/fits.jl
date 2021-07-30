@@ -191,6 +191,23 @@ function gfit_xgauss(y, xmin, xmax, bins=25, fm=0.0)
 end
 
 """
+	fitg1(x, xs, xmin, xmax, xgmin, xgmax; bins=100)
+
+Sugar for gfit_xgauss
+"""
+function fitg1(x, xs, xmin, xmax, xgmin, xgmax; bins=100, bin1=100)
+    hrp, prp = hist1d(x, xs, bins,xmin, xmax)
+    fg = gfit_xgauss(x, xgmin, xgmax, Int(bins))
+
+    yg = hrp.weights
+    xg = centers(hrp)
+    sct = scatter(xg,yg, yerr = sqrt.(yg), markersize=2, legend=false)
+    p = plot!(sct,fg.xg, fg.yg, lw=2, legend=false)
+	xlabel!(xs)
+	return fg, p
+end
+
+"""
 	gfit_gauss2_cmean(y, xmin, xmax, bins, sigmas, cs, cmean=0.0)
 
 Fit a double gaussian (with sigmas -->[sigma1, sigma2] cs -->[c1, c2] )
@@ -249,3 +266,28 @@ fit_gauss2(x::Vector{Float64},
            xmin::Vector{Float64},
 		   xmax::Vector{Float64},
 		   bins::Vector{Int64}) = gfit_gauss2(x, xmin, xmax, bins)
+
+
+"""
+    fitg2(x, xs, xmin, xmax, xg1min, xg1max, xg2min, xg2max, xgmin, xgmax; bins=100)
+Fits 2 gaussians with common mean (0 by default) to vector x.
+"""
+function fitg2(x, xs, xmin, xmax, xg1min, xg1max, xg2min, xg2max, xgmin, xgmax, cm=0.0;
+         bins=100, bins1=100, bins2=100)
+    hrp, prp = hist1d(x, xs, bins,xmin, xmax)
+
+    g1p = (xmin = xg1min, xmax = xg1max, nbin=bins1)
+    g2p = (xmin= xg2min, xmax=  xg2max, nbin=bins2)
+    gp  = (xmin= xgmin, xmax=  xgmax, nbin=bins)
+
+    fg = fit_2gauss_cmean(x, gp, g1p, g2p, cm)
+
+    yg = hrp.weights
+    xg = JPetalo.centers(hrp)
+    psqc = scatter(xg,yg, yerr = sqrt.(yg), markersize=2, legend=false)
+    p = plot!(psqc,fg.xg, fg.yg, lw=2)
+    p = plot!(p,fg.xg, fg.gx1.(fg.xg), lw=2)
+    p = plot!(p,fg.xg, fg.gx2.(fg.xg), lw=2)
+    xlabel!(xs)
+    return fg, p
+end

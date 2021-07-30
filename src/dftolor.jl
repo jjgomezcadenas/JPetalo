@@ -147,6 +147,9 @@ function crt(dfu, dtsel=dtfirst, posel=postrue,
     dt12 = deltatime(dfu, dtsel)
     t12 = dt12./ps
 
+    dtsr12 = ctsr(dfu, postrue)
+    tsr12 = dtsr12./ps
+    
     dtrb12 = cdoi(dfu, posel)
     trb12 = dtrb12 ./ps
 

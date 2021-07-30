@@ -9,4 +9,5 @@ include("fits.jl")
 include("dftolor.jl")
 include("plots.jl")
 include("histos.jl")
+include("evtdfana.jl")
 end

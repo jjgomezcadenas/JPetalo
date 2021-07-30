@@ -23,36 +23,59 @@ end
 
 return a 1d histogram and its corresponding graphics (plots)
 """
-function ghist1d(x, nbins, xmin=bign, xmax=bigp)
+function hist1d(x::Vector{T}, nbins::Integer, xmin::T=bign, xmax::T=bigp) where T
     xx = in_range(x, xmin, xmax)
     h = fit(Histogram, xx, nbins=nbins)
     return h
 end
-function g2hist1d(x, xl, nbins, xmin=bign, xmax=bigp)
-    h = ghist1d(x, nbins, xmin, xmax)
-    p = plot(h, xlabel=xl, yl="frequency")
+
+function hist1d(x::Vector{T}, xs::String, nbins::Integer,
+                xmin::T=bign, xmax::T=bigp; datap = true, fwl=true) where T
+
+    h = hist1d(x, nbins, xmin, xmax)
+    if datap
+        yg = h.weights
+        xg = centers(h)
+        p = scatter(xg,yg, yerr = sqrt.(yg), markersize=3, legend=false)
+        if fwl
+            p = plot!(p, xg,yg, yerr = sqrt.(yg), linewidth=1, legend=false)
+        end
+    else
+        p = plot(h, xlabel=xl, yl="frequency")
+    end
     return h, p
 end
 
-hist1d(x::Vector{Float64}, nbins::Integer,
-       xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
-hist1d(x::Vector{Float64}, xl::String, nbins::Integer,
-      xmin::Float64=bign, xmax::Float64=bigp) = g2hist1d(x, xl, nbins, xmin, xmax)
 
-hist1d(x::Vector{Float32}, nbins::Integer,
-       xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = ghist1d(x, nbins, xmin, xmax)
-hist1d(x::Vector{Float32}, xl::String, nbins::Integer,
-      xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = g2hist1d(x, xl, nbins, xmin, xmax)
-
-hist1d(x::Vector{Float32}, nbins::Integer,
-       xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
-hist1d(x::Vector{Float32}, xl::String, nbins::Integer,
-      xmin::Float64=bign, xmax::Float64=bigp) = g2hist1d(x, xl, nbins, xmin, xmax)
-
-hist1d(x::Vector{Int64}, nbins::Int64,
-       xmin::Int64=-1000000000, xmax::Int64=1000000000) = ghist1d(x, nbins, xmin, xmax)
-hist1d(x::Vector{Int64}, xl::String, nbins::Int64,
-      xmin::Int64=-1000000000, xmax::Int64=1000000000) = g2hist1d(x, xl, nbins, xmin, xmax)
+# function ghist1d(x, nbins, xmin=bign, xmax=bigp)
+#     xx = in_range(x, xmin, xmax)
+#     h = fit(Histogram, xx, nbins=nbins)
+#     return h
+# end
+# function g2hist1d(x, xl, nbins, xmin=bign, xmax=bigp)
+#     h = ghist1d(x, nbins, xmin, xmax)
+#     p = plot(h, xlabel=xl, yl="frequency")
+#     return h, p
+# end
+# hist1d(x::Vector{Float64}, nbins::Integer,
+#        xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
+# hist1d(x::Vector{Float64}, xl::String, nbins::Integer,
+#       xmin::Float64=bign, xmax::Float64=bigp) = g2hist1d(x, xl, nbins, xmin, xmax)
+#
+# hist1d(x::Vector{Float32}, nbins::Integer,
+#        xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = ghist1d(x, nbins, xmin, xmax)
+# hist1d(x::Vector{Float32}, xl::String, nbins::Integer,
+#       xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = g2hist1d(x, xl, nbins, xmin, xmax)
+#
+# hist1d(x::Vector{Float32}, nbins::Integer,
+#        xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
+# hist1d(x::Vector{Float32}, xl::String, nbins::Integer,
+#       xmin::Float64=bign, xmax::Float64=bigp) = g2hist1d(x, xl, nbins, xmin, xmax)
+#
+# hist1d(x::Vector{Int64}, nbins::Int64,
+#        xmin::Int64=-1000000000, xmax::Int64=1000000000) = ghist1d(x, nbins, xmin, xmax)
+# hist1d(x::Vector{Int64}, xl::String, nbins::Int64,
+#       xmin::Int64=-1000000000, xmax::Int64=1000000000) = g2hist1d(x, xl, nbins, xmin, xmax)
 
 
 """
@@ -60,13 +83,16 @@ hist1d(x::Vector{Int64}, xl::String, nbins::Int64,
 
 return a 2d histogram and its corresponding graphics (plots)
 """
-function ghist2d(x,y, nbins, xl, yl,xmin=-1e+9, xmax=1e+9,ymin=-1e+9, ymax=1e+9)
+function hist2d(x::Vector{T},y::Vector{T}, nbins::Integer,
+                xl::String, yl::String,
+                xmin::T=bign, xmax::T=bigp,ymin::T=bign, ymax::T=bigp) where T
     function xy(i)
         return diff(h.edges[i])/2 .+ h.edges[i][1:end-1]
     end
+
     df = DataFrame(x=y,y=x)
-    df1 = JPetalo.select_by_column_value_interval(df, "y", xmin, xmax)
-    df2 = JPetalo.select_by_column_value_interval(df1, "x", ymin, ymax)
+    df1 = select_by_column_value_interval(df, "y", xmin, xmax)
+    df2 = select_by_column_value_interval(df1, "x", ymin, ymax)
     data = (df2.x, df2.y)
     h = fit(Histogram, data, nbins=nbins)
     ye = xy(1)
@@ -74,21 +100,38 @@ function ghist2d(x,y, nbins, xl, yl,xmin=-1e+9, xmax=1e+9,ymin=-1e+9, ymax=1e+9)
     hm = heatmap(xe, ye, h.weights)
     xlabel!(xl)
     ylabel!(yl)
-    return xe,ye,h,hm
+    return h,hm
 end
 
-hist2d(x::Vector{Float64}, y::Vector{Float64}, nbins::Integer,
-       xl::String, yl::String,
-       xmin::Float64=-1e+9, xmax::Float64=1e+9,
-       ymin::Float64=-1e+9, ymax::Float64=1e+9) = ghist2d(x,y, nbins, xl, yl, xmin, xmax, ymin, ymax)
-hist2d(x::Vector{Float32}, y::Vector{Float32}, nbins::Integer,
-       xl::String, yl::String,
-       xmin::Float32=-1e+9, xmax::Float32=1e+9,
-       ymin::Float32=-1e+9, ymax::Float32=1e+9) = ghist2d(x,y, nbins, xl, yl, xmin, xmax, ymin, ymax)
-hist2d(x::Vector{Int64}, y::Vector{Int64}, nbins::Integer,
-       xl::String, yl::String,
-       xmin::Int64=-1000000000, xmax::Int64=1000000000,
-       ymin::Int64=-1000000000, ymax::Int64=-1000000000) = ghist2d(x,y, nbins, xl, yl, xmin, xmax, ymin, ymax)
+# function ghist2d(x,y, nbins, xl, yl,xmin=-1e+9, xmax=1e+9,ymin=-1e+9, ymax=1e+9)
+#     function xy(i)
+#         return diff(h.edges[i])/2 .+ h.edges[i][1:end-1]
+#     end
+#     df = DataFrame(x=y,y=x)
+#     df1 = JPetalo.select_by_column_value_interval(df, "y", xmin, xmax)
+#     df2 = JPetalo.select_by_column_value_interval(df1, "x", ymin, ymax)
+#     data = (df2.x, df2.y)
+#     h = fit(Histogram, data, nbins=nbins)
+#     ye = xy(1)
+#     xe = xy(2)
+#     hm = heatmap(xe, ye, h.weights)
+#     xlabel!(xl)
+#     ylabel!(yl)
+#     return xe,ye,h,hm
+# end
+#
+# hist2d(x::Vector{Float64}, y::Vector{Float64}, nbins::Integer,
+#        xl::String, yl::String,
+#        xmin::Float64=-1e+9, xmax::Float64=1e+9,
+#        ymin::Float64=-1e+9, ymax::Float64=1e+9) = ghist2d(x,y, nbins, xl, yl, xmin, xmax, ymin, ymax)
+# hist2d(x::Vector{Float32}, y::Vector{Float32}, nbins::Integer,
+#        xl::String, yl::String,
+#        xmin::Float32=-1e+9, xmax::Float32=1e+9,
+#        ymin::Float32=-1e+9, ymax::Float32=1e+9) = ghist2d(x,y, nbins, xl, yl, xmin, xmax, ymin, ymax)
+# hist2d(x::Vector{Int64}, y::Vector{Int64}, nbins::Integer,
+#        xl::String, yl::String,
+#        xmin::Int64=-1000000000, xmax::Int64=1000000000,
+#        ymin::Int64=-1000000000, ymax::Int64=-1000000000) = ghist2d(x,y, nbins, xl, yl, xmin, xmax, ymin, ymax)
 
 
 """

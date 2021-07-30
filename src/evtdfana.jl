@@ -47,7 +47,7 @@ end
 Return a 2d histogram of variables of columns c1 and c2 of df1.
 """
 function ploth2d(df1, c1, c2, tx1, ty1, xmin1, xmax1, xmin2, xmax2, bins=150)
-    xe,ye,h1,p1 = hist2d(df1[!,c1],df1[!,c2], bins, tx1, ty1, xmin1, xmax1, xmin2, xmax2)
+    h1,p1 = hist2d(df1[!,c1],df1[!,c2], bins, tx1, ty1, xmin1, xmax1, xmin2, xmax2)
     plot(p1, layout= (1, 1), legend=false, fmt = :png,
         left_margin=5Plots.mm, right_margin=1Plots.mm, bottom_margin=5Plots.mm)
 end

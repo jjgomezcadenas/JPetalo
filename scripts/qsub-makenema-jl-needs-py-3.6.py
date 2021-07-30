@@ -1,7 +1,7 @@
 # NB, needs Python version >= 3.6
 
 import os
-from os.path import exists, join
+from os.path import exists, join, basename
 import argparse
 from glob import glob
 import subprocess
@@ -18,6 +18,8 @@ args = parser.parse_args()
 
 n_files = len(glob(f'{args.dir_in}/*')) # Need python >= 3.6
 
+launch_dir = os.getcwd()
+
 number_of_jobs = args.number_of_jobs
 small_job_size, number_of_big_jobs = divmod(n_files, number_of_jobs)
 number_of_small_jobs = number_of_jobs - number_of_big_jobs
@@ -33,9 +35,10 @@ for _ in range(number_of_small_jobs):
 width = len(str(job_file_ranges[-1][-1]))
 
 template = """#!/bin/bash
-#PBS -N {dir_out}-{first}-{last}
+#PBS -N {basename_dir_out}-{first}-{last}
 #PBS -l nodes=1:ppn=1
-cd $PBS_O_WORKDIR
+#cd $PBS_O_WORKDIR
+cd {launch_dir}
 
 /software/julia-1.6.1/bin/julia makenema.jl -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {phot}
 """
@@ -53,8 +56,10 @@ for i, l in job_file_ranges:
     qsub_script_name = f'qsub-{i:0{width}}-{l:0{width}}.sh'
     qsub_script = template.format(first=i, last=l,
                                   dir_in  = args.dir_in,
-                                  dir_out = args.dir_out,
+                                  dir_out = output_directory,
                                   phot    = '--phot' if args.phot else '',
+                                  launch_dir = launch_dir,
+                                  basename_dir_out = basename(output_directory),
                                   width   = width,
                                   )
     with open(qsub_script_name, 'w') as file:

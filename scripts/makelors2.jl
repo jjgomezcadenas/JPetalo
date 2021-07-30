@@ -79,7 +79,6 @@ function parse_commandline()
             help = "output file prefix"
             arg_type = String
             default = "all"
-
     end
 
     return parse_args(s)

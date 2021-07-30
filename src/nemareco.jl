@@ -22,7 +22,8 @@ function recohits(event        ::Integer,
 				   total_charge::DataFrame,
 				   sensor_xyz  ::DataFrame,
 				   waveform    ::DataFrame,
-				   ecut        ::Float32,
+				   emin        ::Float32,
+				   qcut        ::Float32,
 				   pde         ::Float32,
 				   max_pes     ::Integer,
 				   sigma_tof   ::Float32)
@@ -51,6 +52,12 @@ function recohits(event        ::Integer,
 	  end
 	end
 
+	# Total charge must be above threshold
+	q = sum(total_charge.charge)
+
+	if q < emin
+		return nothing
+	end
 
   	# select the waveform of this event
 	wfm = select_by_column_value(waveform, "event_id", event)
@@ -137,8 +144,8 @@ function recohits(event        ::Integer,
   	@debug "DF with time and q: size = $(size(wfmx))"
 	@debug first(wfmx, 5)
 
-	# cut on total charge (> ecut)
-	qdft   = wfmx[wfmx.q .>ecut,:]
+	# cut on total charge (> qcut)
+	qdft   = wfmx[wfmx.q .>qcut,:]
 
 	#select the id's of the sipms with charge above threshold
 	sids = qdft[!,:sensor_id]
@@ -207,7 +214,7 @@ function nema_analysis!(event       ::Integer,
 	@debug "Primaries in event:" prim
 	#hit dataframe
 	hitdf = recohits(event, total_charge, sensor_xyz, waveform,
-					  dc.ecut, dc.pde, dc.max_pes, dc.sigma_tof)
+					 2.0f0*dc.qmin, dc.ecut, dc.pde, dc.max_pes, dc.sigma_tof)
 
 	if hitdf == nothing
 		@warn "Warning, hidtf evaluates to nothing for event = $event"
@@ -259,37 +266,15 @@ function nema_analysis!(event       ::Integer,
 	@info " True position in hemisphere 1" xt1
 	@info " True position in hemisphere 1" xt2
 
-	# find r1 and r2 from charge
-	#r1q = dc.rfq(q1)
-	#r2q = dc.rfq(q2)
-
-	# find r1 and r2 from zstd
-	#r1z = dc.rfz(zstd1)
-	#r2z = dc.rfz(zstd2)
-	#@info " True     : r1 = $r1, r2 = $r2"
-	#@info " From r   : r1q = $r1q, r2q = $r2q"
-	#@info " From zstd: r1z = $r1z, r2z = $r2z"
-
 	# New (x,y) positions estimated from r1, r2
 	x1, y1, z1  = radial_correction(b1, r1, rsipm)
 	x2, y2, z2  = radial_correction(b2, r2, rsipm)
-
-	# New (x,y) positions estimated from r1q, r2q
-	#xr1, yr1, zr1  = radial_correction(b1, r1q, rsipm)
-	#xr2, yr2, zr2  = radial_correction(b2, r2q, rsipm)
-
-	# New (x,y) positions estimated from r1z, r2z
-	#xR1, yR1, zR1  = radial_correction(b1, r1z, rsipm)
-	#xR2, yR2, zR2  = radial_correction(b2, r2z, rsipm)
 
 	@info " New (x,y,z) positions estimated from r1, r2 & r1q, r2q"
 	@info " from r1:  x1 = $x1, y1=$y1, z1=$z1"
 	@info " from r2:  x2 = $x2, y1=$y2, z1=$z2"
 	@info " from rq: xr1 = $xr1, yr1=$yr1, zr1=$zr1"
 	@info " from rq: xr2 = $xr2, y1=$yr2, z1=$zr2"
-	#@info " from rz: xR1 = $xR1, yR1=$yR1, zR1=$zR1"
-	#@info " from rz: xR2 = $xR2, yR2=$yR2, zR2=$zR2"
-
 
 	# Find the sipm with the fastest time
 	t1 = minimum(hq1df.tmin)
@@ -318,7 +303,6 @@ function nema_analysis!(event       ::Integer,
 	htr2 = select_by_column_value(hq2df, "trmin", tr2)
 
 	# store data
-	#source data
 
 	push!(n3d["xs"],prim.x[1])
 	push!(n3d["ys"],prim.y[1])
@@ -326,21 +310,24 @@ function nema_analysis!(event       ::Integer,
 	push!(n3d["ux"],prim.vx[1])
 	push!(n3d["uy"],prim.vy[1])
 	push!(n3d["uz"],prim.vz[1])
-	# double hemisphere data (lors)
+
 	push!(n3d["xt1"],xt1[1])
 	push!(n3d["yt1"],xt1[2])
 	push!(n3d["zt1"],xt1[3])
+	push!(n3d["t1"],t1)
 	push!(n3d["xt2"],xt2[1])
 	push!(n3d["yt2"],xt2[2])
 	push!(n3d["zt2"],xt2[3])
+	push!(n3d["t2"],t2)
+
 	push!(n3d["x1"],x1)
 	push!(n3d["y1"],y1)
 	push!(n3d["z1"],z1)
-	push!(n3d["t1"],t1)
+
 	push!(n3d["x2"],x2)
 	push!(n3d["y2"],y2)
 	push!(n3d["z2"],z2)
-	push!(n3d["t2"],t2)
+
 	push!(n3d["xr1"],b1.x)
 	push!(n3d["yr1"],b1.y)
 	push!(n3d["zr1"],b1.z)
@@ -353,6 +340,7 @@ function nema_analysis!(event       ::Integer,
 
 	push!(n3d["ta1"],ta1)
 	push!(n3d["ta2"],ta2)
+
 	push!(n3d["xb1"],ht1.x[1])
 	push!(n3d["yb1"],ht1.y[1])
 	push!(n3d["zb1"],ht1.z[1])
@@ -360,18 +348,15 @@ function nema_analysis!(event       ::Integer,
 	push!(n3d["yb2"],ht2.y[1])
 	push!(n3d["zb2"],ht2.z[1])
 
-	# single hemisphere data (control)
 	push!(n3d["nsipm1"],nrow(hq1df))
 	push!(n3d["q1"], sum(hq1df.q))
 	push!(n3d["r1"],r1)
-	#push!(n3d["r1q"],r1q)
 	push!(n3d["phistd1"],phistd1)
 	push!(n3d["zstd1"],zstd1)
 
 	push!(n3d["nsipm2"],nrow(hq2df))
 	push!(n3d["q2"], sum(hq2df.q))
 	push!(n3d["r2"],r2)
-	#push!(n3d["r2q"],r2q)
 	push!(n3d["phistd2"],phistd2)
 	push!(n3d["zstd2"],zstd2)
 
@@ -385,7 +370,26 @@ end
 					  phot     ::Bool=true,
 					  lor_algo ::Function=lor_maxq)
 
-Main driver for nema studies
+Return the evtdf DataFrame
+
+
+   nsipm1  => Number of sipms in hemisphere 1 (nsipm2 for hemisphere 2)
+   q1      => Total charge in hemisphere
+   r1      => True radius, gamma interaction point,
+   phistd  =>  Phi standard deviations (weigthed by charge)
+   zstd    => Z standard deviations (weigthed by charge)
+
+   xs, ys, zs    => Position of the pair of gammas (in target),
+   ux, uy, uz    => Direction vectors of gammas
+
+   xt1, yt1, zt1 => True position of gammas,
+   x1,   y1, z1  => Reco position of gammas (from barycenter and r1),
+   xr1, yr1, zr  => Baricenter
+   xb1, yb1, zb1 => Position of the sipm giving time stamp
+
+   t1            => Time stamp of first photon,
+   tr1           => Time stamp of first photon, after pdf and smearing
+   ta1           => Average of time stamps, first five photons
 
 """
 function nemareco(files    ::Vector{String},
@@ -407,11 +411,9 @@ function nemareco(files    ::Vector{String},
 	           "xt1"=>[0.0f0], "yt1"=>[0.0f0], "zt1"=>[0.0f0],"t1"=>[0.0f0],
 		       "xt2"=>[0.0f0], "yt2"=>[0.0f0], "zt2"=>[0.0f0], "t2"=>[0.0f0],
                "x1"=>[0.0f0],   "y1"=>[0.0f0], "z1"=>[0.0f0],
-               "x2"=>[0.0f0],   "y2"=>[0.0f0], "z2"=>[0.0f0], 
+               "x2"=>[0.0f0],   "y2"=>[0.0f0], "z2"=>[0.0f0],
 			   "xr1"=>[0.0f0], "yr1"=>[0.0f0], "zr1"=>[0.0f0], "tr1"=>[0.0f0],
-			   #"xR1"=>[0.0f0], "yR1"=>[0.0f0], "zR1"=>[0.0f0],
                "xr2"=>[0.0f0], "yr2"=>[0.0f0], "zr2"=>[0.0f0], "tr2"=>[0.0f0],
-			   #"xR2"=>[0.0f0], "yR2"=>[0.0f0], "zR2"=>[0.0f0],
 			   "xb1"=>[0.0f0], "yb1"=>[0.0f0], "zb1"=>[0.0f0], "ta1"=>[0.0f0],
 			   "xb2"=>[0.0f0], "yb2"=>[0.0f0], "zb2"=>[0.0f0], "ta2"=>[0.0f0])
 

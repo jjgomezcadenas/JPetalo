@@ -71,6 +71,4 @@ struct DetConf
 	qmax::Float32
 	max_pes::Integer
 	ntof::Integer
-	rfq::Function
-	rfz::Function
 end

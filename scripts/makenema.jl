@@ -18,25 +18,24 @@ old_logger = global_logger(logger)
 # radius-from-q function. The parameters of the straight line have been
 # obtained from a fit to photoelectric data.
 
-function grfq(p::Vector{Float32})
-	function rfq(q)
-		return p[1] + p[2] * q
-	end
-	return rfq
-end
-
-# radius-from-zstd function. The parameters of the parabol have been
-# obtained from a fit to photoelectric data.
-
-function grfz(p::Vector{Float32})
-	function rfz(z)
-		return p[1] + p[2] * z + p[3] * z^2
-	end
-	return rfz
-end
+# function grfq(p::Vector{Float32})
+# 	function rfq(q)
+# 		return p[1] + p[2] * q
+# 	end
+# 	return rfq
+# end
+#
+# # radius-from-zstd function. The parameters of the parabol have been
+# # obtained from a fit to photoelectric data.
+#
+# function grfz(p::Vector{Float32})
+# 	function rfz(z)
+# 		return p[1] + p[2] * z + p[3] * z^2
+# 	end
+# 	return rfz
+# end
 
 function makenema(args)
-
 
 	lorf    = args["loralgo"]
 	detconf = args["detconf"]
@@ -59,48 +58,41 @@ function makenema(args)
 		pde  = 1.0f0
 		sigma_tof = 0.001f0
 		ecut = 10.0f0
-		qmin = 500.0f0
-		qmax = 12000.0f0
-		#qmin = 5200.0f0
-		#qmax = 9000.0f0
+		qmin = 100.0f0
+		qmax = 15000.0f0
 		max_pes = 10
 		ntof =5
-		rfq = grfq([315.1f0, 0.008f0])
-		rfz = grfq([392.5f0, 0.36f0, -0.065f0])
+		#rfq = grfq([315.1f0, 0.008f0])
+		#rfz = grfq([392.5f0, 0.36f0, -0.065f0])
+		#dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
 		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
 	elseif detconf == "pde_0.3_sigmatof_1ps"
 		pde  = 0.3f0
 		sigma_tof = 0.001f0
 		ecut = 3.0f0
-		qmin = 1800.0f0
-		qmax = 3000.0f0
+		qmin = 100.0f0
+		qmax = 5000.0f0
 		max_pes = 10
 		ntof =5
-		rfq = grfq([312.0f0, 0.027f0])
-		rfz = grfq([395.6f0, -0.19f0, -0.037f0])
-		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
+		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof)
 	elseif detconf == "pde_0.3_sigmatof_85ps"
 		pde  = 0.3f0
 		sigma_tof = 0.085f0
 		ecut = 3.0f0
-		qmin = 1800.0f0
-		qmax = 3000.0f0
+		qmin = 100.0f0
+		qmax = 5000.0f0
 		max_pes = 10
 		ntof =5
-		rfq = grfq([312.0f0, 0.027f0])
-		rfz = grfq([395.6f0, -0.19f0, -0.037f0])
-		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
+		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof)
 	else
 		pde  = 0.3f0
 		sigma_tof = 0.085f0
 		ecut = 3.0f0
-		qmin = 100.0f0
-		qmax = 3500.0f0
+		qmin = 1500.0f0
+		qmax = 3000.0f0
 		max_pes = 10
 		ntof =5
-		rfq = grfq([312.0f0, 0.027f0])
-		rfz = grfq([395.6f0, -0.19f0, -0.037f0])
-		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof, rfq, rfz)
+		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof)
 	end
 
 	println("makenema configuration")
@@ -124,17 +116,17 @@ function parse_commandline()
 
     @add_arg_table s begin
         "--dir", "-d"
-            help = "directory with nema3 simulations"
+            help = "directory with nema simulations"
             arg_type = String
             default = "nema3-vac-1m"
 		"--odir", "-o"
             help = "output directory"
             arg_type = String
-            default = "nema3df"
+            default = "evtdf"
 		"--ofile", "-x"
             help = "output file"
             arg_type = String
-            default = "nema3df.csv"
+            default = "evtdf.csv"
 		"--filei", "-i"
 	        help = "number of initial file in glob list"
 	        default  = 1

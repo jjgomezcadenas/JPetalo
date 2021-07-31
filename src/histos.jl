@@ -19,31 +19,68 @@ end
 
 
 """
-    hist1d(x, nbins, xl)
+    hist1d(x::Vector{T}, nbins::Integer, xmin::T=bign, xmax::T=bigp)
+    hist1d(x::Vector{T}, xs::String, nbins::Integer,
+                    xmin::T=bign, xmax::T=bigp; datap = true, fwl=true)
+    hist1d(h::Histogram, xs::String; datap = true, markersize=3, fwl=false)
 
 return a 1d histogram and its corresponding graphics (plots)
 """
-function hist1d(x::Vector{T}, nbins::Integer, xmin::T=bign, xmax::T=bigp) where T
+function hist1d(x::Vector{T}, nbins::Integer, xmin::T=bign, xmax::T=bigp, norm=false) where T
     xx = in_range(x, xmin, xmax)
-    h = fit(Histogram, xx, nbins=nbins)
+    dx = (xmax - xmin) / nbins
+    bins =[xmin + i * dx for i in 0:nbins]
+    h = fit(Histogram, xx, bins)
+    if norm
+        h = StatsBase.normalize(h, mode=:density)
+    end
     return h
 end
 
 function hist1d(x::Vector{T}, xs::String, nbins::Integer,
-                xmin::T=bign, xmax::T=bigp; datap = true, fwl=true) where T
+                xmin::T=bign, xmax::T=bigp;
+                norm=false, datap = true, markersize=3, fwl=false) where T
 
-    h = hist1d(x, nbins, xmin, xmax)
+    return hist1d(hist1d(x, nbins, xmin, xmax, norm), xs,
+                         datap=datap, markersize=markersize, fwl=fwl)
+end
+
+function hist1d(h::Histogram, xs::String; datap=true, markersize=3, fwl=false)
+
     if datap
-        yg = h.weights
+        yg = h.weights * 1.0
         xg = centers(h)
-        p = scatter(xg,yg, yerr = sqrt.(yg), markersize=3, legend=false)
+        p = scatter(xg,yg, yerr = sqrt.(yg), markersize=markersize, legend=false)
         if fwl
             p = plot!(p, xg,yg, yerr = sqrt.(yg), linewidth=1, legend=false)
         end
     else
         p = plot(h, xlabel=xl, yl="frequency")
     end
+    xlabel!(xs)
+    ylabel!("frequency")
+
     return h, p
+end
+
+function hist1d(h1::Histogram, h2::Histogram, xs::String; markersize=2, norm=false)
+
+    if norm
+        h1 = StatsBase.normalize(h1, mode=:density)
+        h2 = StatsBase.normalize(h2, mode=:density)
+    end
+
+    yg1 = h1.weights * 1.0
+    xg1 = centers(h1)
+    yg2 = h2.weights * 1.0
+    xg2 = centers(h2)
+
+    p1 = scatter(xg1,yg1, yerr = sqrt.(yg1), markersize=markersize)
+    p  = scatter!(p1,xg2,yg2, yerr = sqrt.(yg2), markersize=markersize)
+    xlabel!(xs)
+    ylabel!("frequency")
+
+    return p
 end
 
 

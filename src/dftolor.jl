@@ -139,17 +139,14 @@ end
 
 Return the CRT of the system
 """
-function crt(dfu, dtsel=dtfirst, posel=postrue,
-            xmin1= -500.0, xmax1= -50.0, nbin1=50,
-            xmin2= -50.0,  xmax2=  50.0, nbin2=50,
-            xmin= -500.0,  xmax=  500.0, nbin=100)
+function crt(dfu, dtsel=dtfirst, posel=postrue)
 
     dt12 = deltatime(dfu, dtsel)
     t12 = dt12./ps
 
     dtsr12 = ctsr(dfu, postrue)
     tsr12 = dtsr12./ps
-    
+
     dtrb12 = cdoi(dfu, posel)
     trb12 = dtrb12 ./ps
 
@@ -158,13 +155,13 @@ function crt(dfu, dtsel=dtfirst, posel=postrue,
 
     dt = t12 - tsr12 - trb12
 
-    g1p = (xmin= xmin1, xmax= xmax1, nbin=nbin1)
-    g2p = (xmin= xmin2, xmax=  xmax2, nbin=nbin2)
-    gp  = (xmin= xmin, xmax=  xmax, nbin=nbin)
-
-    fdt = JPetalo.fit_2gauss_cmean(dt, gp, g1p, g2p, 0.0)
-    @info "dt: sigma" fdt.sigma1 fdt.sigma2
-    return t12, dt, fdt
+    # g1p = (xmin= xmin1, xmax= xmax1, nbin=nbin1)
+    # g2p = (xmin= xmin2, xmax=  xmax2, nbin=nbin2)
+    # gp  = (xmin= xmin, xmax=  xmax, nbin=nbin)
+    #
+    # fdt = JPetalo.fit_2gauss_cmean(dt, gp, g1p, g2p, 0.0)
+    # @info "dt: sigma" fdt.sigma1 fdt.sigma2
+    #return t12, dt, fdt
 
 end
 

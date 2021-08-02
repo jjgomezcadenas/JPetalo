@@ -7,12 +7,19 @@ from glob import glob
 import subprocess
 
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--dir-in', help='Directory containing input files')
-parser.add_argument('-o', '--dir-out', help='Output directory')
-parser.add_argument('-n', '--number-of-jobs', type=int, help='Split work among N jobs', required=True)
-parser.add_argument('--phot', action="store_true", help='Use only pure photoelectric events')
+
+parser.add_argument('-d', '--dir-in',
+                    help='Directory containing input files')
+
+parser.add_argument('-o', '--dir-out',
+                    help='Output directory')
+
+parser.add_argument('-n', '--number-of-jobs', type=int,
+                    help='Split work among N jobs', required=True)
+
+parser.add_argument('--phot', action="store_true",
+                    help='Use only pure photoelectric events')
 
 args = parser.parse_args()
 

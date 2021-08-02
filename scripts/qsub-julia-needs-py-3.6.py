@@ -75,4 +75,4 @@ for i, l in job_file_ranges:
     with open(qsub_script_name, 'w') as file:
         file.write(qsub_script)
     print(join(os.getcwd(), qsub_script_name))
-    subprocess.call(f'qsub {qsub_script_name}', shell=True)
+    subprocess.call(f'qsub -l mem=6gb -q long {qsub_script_name}', shell=True)

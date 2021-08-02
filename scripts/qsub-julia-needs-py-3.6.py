@@ -21,10 +21,8 @@ parser.add_argument('-o', '--dir-out',
 parser.add_argument('-n', '--number-of-jobs', type=int,
                     help='Split work among N jobs', required=True)
 
-parser.add_argument('--phot', action="store_true",
-                    help='Use only pure photoelectric events')
-
-args = parser.parse_args()
+args, other_args = parser.parse_known_args()
+other_args = ' '.join(other_args)
 
 n_files = len(glob(f'{args.dir_in}/*')) # Need python >= 3.6
 
@@ -50,7 +48,7 @@ template = """#!/bin/bash
 #cd $PBS_O_WORKDIR
 cd {launch_dir}
 
-/software/julia-1.6.1/bin/julia {args.program} -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {phot}
+/software/julia-1.6.1/bin/julia {args.program} -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {other_args}
 """
 
 output_directory = args.dir_out
@@ -67,7 +65,6 @@ for i, l in job_file_ranges:
     qsub_script = template.format(first=i, last=l,
                                   dir_in  = args.dir,
                                   dir_out = output_directory,
-                                  phot    = '--phot' if args.phot else '',
                                   launch_dir = launch_dir,
                                   basename_dir_out = basename(output_directory),
                                   width   = width,

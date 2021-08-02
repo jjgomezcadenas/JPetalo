@@ -9,6 +9,9 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 
+parser.add_argument('-p', '--program',
+                    help='The Julia program to be executed')
+
 parser.add_argument('-d', '--dir-in',
                     help='Directory containing input files')
 
@@ -47,7 +50,7 @@ template = """#!/bin/bash
 #cd $PBS_O_WORKDIR
 cd {launch_dir}
 
-/software/julia-1.6.1/bin/julia makenema.jl -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {phot}
+/software/julia-1.6.1/bin/julia {args.program} -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {phot}
 """
 
 output_directory = args.dir_out

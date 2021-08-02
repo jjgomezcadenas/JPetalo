@@ -55,7 +55,7 @@ os.chdir(join(output_directory, 'qsub'))
 for i, l in job_file_ranges:
     qsub_script_name = f'qsub-{i:0{width}}-{l:0{width}}.sh'
     qsub_script = template.format(first=i, last=l,
-                                  dir_in  = args.dir_in,
+                                  dir_in  = args.dir_
                                   dir_out = output_directory,
                                   phot    = '--phot' if args.phot else '',
                                   launch_dir = launch_dir,

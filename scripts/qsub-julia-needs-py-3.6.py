@@ -49,7 +49,7 @@ template = """#!/bin/bash
 #cd $PBS_O_WORKDIR
 cd {launch_dir}
 
-/software/julia-1.6.1/bin/julia {args.program} -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {other_args}
+/software/julia-1.6.1/bin/julia {program} -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {other_args}
 """
 
 output_directory = args.dir_out
@@ -64,11 +64,13 @@ os.chdir(join(output_directory, 'qsub'))
 for i, l in job_file_ranges:
     qsub_script_name = f'qsub-{i:0{width}}-{l:0{width}}.sh'
     qsub_script = template.format(first=i, last=l,
-                                  dir_in  = args.dir,
-                                  dir_out = output_directory,
-                                  launch_dir = launch_dir,
+                                  dir_in           = args.dir_in,
+                                  dir_out          = output_directory,
+                                  launch_dir       = launch_dir,
                                   basename_dir_out = basename(output_directory),
-                                  width   = width,
+                                  width            = width,
+                                  program          = args.program,
+                                  other_args       = other_args,
                                   )
     with open(qsub_script_name, 'w') as file:
         file.write(qsub_script)

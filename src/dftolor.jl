@@ -1,7 +1,7 @@
 using DataFrames
 
 @enum Dtsel dtfirst dtminimum dtaverage
-@enum Possel postrue posreco
+@enum Possel postrue posreco posrecall
 
 """
     setunits(df::DataFrame)
@@ -9,62 +9,128 @@ using DataFrames
 Return a dataframe for lor computation where quantities are defined with their units
 """
 
-function setunits(df::DataFrame)
-    DataFrame(
-        nsipm1 = df.nsipm1,     # number of sipms in cluster
-        nsipm2 = df.nsipm2,
+function setunits(df::DataFrame, schema="v2")
 
-        q1 = df.q1,             # q in pes
-        q2 = df.q2,
+    if schema == "v1"
+        DataFrame(
+            nsipm1 = df.nsipm1,     # number of sipms in cluster
+            nsipm2 = df.nsipm2,
 
-        r1  = df.r1  * mm,      # best radius
-        r1q = df.r1q * mm,      # raw radius from q
-        r2  = df.r2  * mm,
-        r2q = df.r2q * mm,
+            q1 = df.q1,             # q in pes
+            q2 = df.q2,
 
-        t1  = df.t1  * ns,      # time true
-        t2  = df.t2  * ns,
-        ta1 = df.ta1 * ns,      # average (over 5 mimimum in t)
-        ta2 = df.ta2 * ns,
-        tr1 = df.tr1 * ns,      # reco (smeared take minimum)
-        tr2 = df.tr2 * ns,
+            r1  = df.r1  * mm,      # best radius
+            r1q = df.r1q * mm,      # raw radius from q
+            r2  = df.r2  * mm,
+            r2q = df.r2q * mm,
 
-        ux = df.ux,             # unit direction vector of gammas
-        uy = df.uy,
-        uz = df.uz,
+            t1  = df.t1  * ns,      # time true
+            t2  = df.t2  * ns,
+            ta1 = df.ta1 * ns,      # average (over 5 mimimum in t)
+            ta2 = df.ta2 * ns,
+            tr1 = df.tr1 * ns,      # reco (smeared take minimum)
+            tr2 = df.tr2 * ns,
 
-        x1  = df.x1  * mm,      # best reco position
-        x2  = df.x2  * mm,
-        xb1 = df.xb1 * mm,      # position of sipm that gives time stamp
-        xb2 = df.xb2 * mm,
-        xr1 = df.xr1 * mm,      # reco position
-        xr2 = df.xr2 * mm,
-        xs  = df.xs  * mm,      # position of source
-        xt1 = df.xt1 * mm,      # true position
-        xt2 = df.xt2 * mm,
+            ux = df.ux,             # unit direction vector of gammas
+            uy = df.uy,
+            uz = df.uz,
 
-        y1  = df.y1  * mm,
-        y2  = df.y2  * mm,
-        yb1 = df.yb1 * mm,
-        yb2 = df.yb2 * mm,
-        yr1 = df.yr1 * mm,
-        yr2 = df.yr2 * mm,
-        ys  = df.ys  * mm,
-        yt1 = df.yt1 * mm,
-        yt2 = df.yt2 * mm,
+            x1  = df.x1  * mm,      # best reco position
+            x2  = df.x2  * mm,
+            xb1 = df.xb1 * mm,      # position of sipm that gives time stamp
+            xb2 = df.xb2 * mm,
+            xr1 = df.xr1 * mm,      # reco position
+            xr2 = df.xr2 * mm,
+            xs  = df.xs  * mm,      # position of source
+            xt1 = df.xt1 * mm,      # true position
+            xt2 = df.xt2 * mm,
 
-        z1  = df.z1  * mm,
-        z2  = df.z2  * mm,
-        zb1 = df.zb1 * mm,
-        zb2 = df.zb2 * mm,
-        zr1 = df.zr1 * mm,
-        zr2 = df.zr2 * mm,
-        zs  = df.zs  * mm,
-        zt1 = df.zt1 * mm,
-        zt2 = df.zt2 * mm,
+            y1  = df.y1  * mm,
+            y2  = df.y2  * mm,
+            yb1 = df.yb1 * mm,
+            yb2 = df.yb2 * mm,
+            yr1 = df.yr1 * mm,
+            yr2 = df.yr2 * mm,
+            ys  = df.ys  * mm,
+            yt1 = df.yt1 * mm,
+            yt2 = df.yt2 * mm,
 
-    )
+            z1  = df.z1  * mm,
+            z2  = df.z2  * mm,
+            zb1 = df.zb1 * mm,
+            zb2 = df.zb2 * mm,
+            zr1 = df.zr1 * mm,
+            zr2 = df.zr2 * mm,
+            zs  = df.zs  * mm,
+            zt1 = df.zt1 * mm,
+            zt2 = df.zt2 * mm,
+
+        )
+    else
+        DataFrame(
+
+            nsipm1 = df.nsipm1,     # number of sipms in cluster
+            nsipm2 = df.nsipm2,
+
+            q1 = df.q1,             # q in pes
+            q2 = df.q2,
+
+            r1  = df.r1  * mm,      # best radius
+            r2  = df.r2  * mm,
+
+            t1  = df.t1  * ns,      # time true
+            t2  = df.t2  * ns,
+            ta1 = df.ta1 * ns,      # average (over 5 mimimum in t)
+            ta2 = df.ta2 * ns,
+            tr1 = df.tr1 * ns,      # reco (smeared take minimum)
+            tr2 = df.tr2 * ns,
+
+            ux = df.ux,             # unit direction vector of gammas
+            uy = df.uy,
+            uz = df.uz,
+
+            x1  = df.x1  * mm,      # best reco position
+            x2  = df.x2  * mm,
+            xb1 = df.xb1 * mm,      # position of sipm that gives time stamp
+            xb2 = df.xb2 * mm,
+            xr1 = df.xr1 * mm,      # reco position
+            xr2 = df.xr2 * mm,
+            xs  = df.xs  * mm,      # position of source
+            xt1 = df.xt1 * mm,      # true position
+            xt2 = df.xt2 * mm,
+
+            y1  = df.y1  * mm,
+            y2  = df.y2  * mm,
+            yb1 = df.yb1 * mm,
+            yb2 = df.yb2 * mm,
+            yr1 = df.yr1 * mm,
+            yr2 = df.yr2 * mm,
+            ys  = df.ys  * mm,
+            yt1 = df.yt1 * mm,
+            yt2 = df.yt2 * mm,
+
+            z1  = df.z1  * mm,
+            z2  = df.z2  * mm,
+            zb1 = df.zb1 * mm,
+            zb2 = df.zb2 * mm,
+            zr1 = df.zr1 * mm,
+            zr2 = df.zr2 * mm,
+            zs  = df.zs  * mm,
+            zt1 = df.zt1 * mm,
+            zt2 = df.zt2 * mm,
+        )
+    end
 end
+
+"""
+Computes the radial correction from barycenter
+"""
+function radial_correction(xb::Vector{Float64}, yb::Vector{Float64},zb::Vector{Float64},
+                            r::Vector{Float64}, rsipm=395.4)
+    r2 = r ./ rsipm   # redial correction
+    return r2 .* xb, r2 .* yb, zb
+end
+
 
 """
     deltatime(df::DataFrame, t::Dtsel=dtfirst)
@@ -77,9 +143,9 @@ dtaverage for average time stamp of 5 minimum SiPMs
 """
 function deltatime(df::DataFrame, t::Dtsel=dtfirst)
     if t     == dtminimum
-        return  df.tr2 - df.tr1
+        return  uconvert.(ps, df.tr2 - df.tr1)
     elseif t == dtaverage
-        return df.ta2 - df.ta1
+        return uconvert.(ps,df.ta2 - df.ta1)
     else
         return uconvert.(ps, df.t2 - df.t1)
 
@@ -96,7 +162,8 @@ position:
   postrue: if using true values
 
 """
-function cdoi(df::DataFrame, position::Possel=postrue, nlxe::Number=1.6)
+function cdoi(df::DataFrame, r1::Vector{Float64}, r2::Vector{Float64},
+              position::Possel=postrue, nlxe::Number=1.6)
     clxe = SpeedOfLightInVacuum/nlxe
 
     if position == posreco
@@ -105,6 +172,18 @@ function cdoi(df::DataFrame, position::Possel=postrue, nlxe::Number=1.6)
 
         dxrb2 = [JPetalo.dxyz([df.x2[i], df.y2[i], df.z2[i]],
                               [df.xb2[i], df.yb2[i], df.zb2[i]]) for i in 1:nrow(df)]
+
+    elseif position == posrecall
+
+        xq1,yq1,zq1 =  radial_correction(df.xr1./mm, df.yr1./mm, df.zr1./mm, r1)
+        xq2,yq2,zq2 =  radial_correction(df.xr2./mm, df.yr2./mm, df.zr2./mm, r2)
+
+        dxrb1 = [JPetalo.dxyz([xq1[i]*mm, yq1[i]*mm, zq1[i]*mm],
+                              [df.xb1[i], df.yb1[i], df.zb1[i]]) for i in 1:nrow(df)]
+
+        dxrb2 = [JPetalo.dxyz([xq2[i]*mm, yq2[i]*mm, zq2[i]*mm],
+                              [df.xb2[i], df.yb2[i], df.zb2[i]]) for i in 1:nrow(df)]
+
     else
         dxrb1 = [JPetalo.dxyz([df.xt1[i], df.yt1[i], df.zt1[i]],
                               [df.xb1[i], df.yb1[i], df.zb1[i]]) for i in 1:nrow(df)]
@@ -139,29 +218,18 @@ end
 
 Return the CRT of the system
 """
-function crt(dfu, dtsel=dtfirst, posel=postrue)
+function crt(dfu, r1::Vector{Float64}, r2::Vector{Float64}, dtsel=dtfirst, posel=postrue)
 
     dt12 = deltatime(dfu, dtsel)
     t12 = dt12./ps
 
-    dtsr12 = ctsr(dfu, postrue)
+    dtsr12 = ctsr(dfu, postrue)   # this is a nominal position for CRT
     tsr12 = dtsr12./ps
 
-    dtrb12 = cdoi(dfu, posel)
-    trb12 = dtrb12 ./ps
-
-    dtrb12 = cdoi(dfu, posel)
+    dtrb12 = cdoi(dfu, r1, r2, posel)
     trb12 = dtrb12 ./ps
 
     dt = t12 - tsr12 - trb12
-
-    # g1p = (xmin= xmin1, xmax= xmax1, nbin=nbin1)
-    # g2p = (xmin= xmin2, xmax=  xmax2, nbin=nbin2)
-    # gp  = (xmin= xmin, xmax=  xmax, nbin=nbin)
-    #
-    # fdt = JPetalo.fit_2gauss_cmean(dt, gp, g1p, g2p, 0.0)
-    # @info "dt: sigma" fdt.sigma1 fdt.sigma2
-    #return t12, dt, fdt
 
 end
 

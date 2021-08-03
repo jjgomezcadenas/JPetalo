@@ -29,39 +29,13 @@ end
 
 
 """
-    plotreso(dfx, r1x, tx1, ty1, xmin, xmax, bins=150)
+    plotreso(r1t, r1x, tx1, ty1, "xs", xmin, xmax, bins=150)
 Plots the resolution of estimator r1x wrt true radius r1
 
 """
-function plotreso(dfx, r1x, tx1, ty1, xmin, xmax, bins=150)
-    h1,p1 = hist2d(dfx.r1,r1x, bins, tx1, ty1)
-    h2,p2       = hist1d(dfx.r1 - r1x, "DX", bins, xmin, xmax)
+function plotreso(r1t, r1x, tx1, ty1, xmin, xmax, bins=150)
+    h1,p1 = hist2d(r1x, r1t, bins, tx1, ty1)
+    h2,p2 = hist1d(r1t - r1x, xs, bins, xmin, xmax)
     plot(p1, p2,  layout= (1, 2), legend=false, fmt = :png,  size = (1000, 400),
-        left_margin=5Plots.mm, right_margin=1Plots.mm, bottom_margin=5Plots.mm)
-end
-
-
-"""
-    ploth2d(df1, c1, c2, tx1, ty1, xmin1, xmax1, xmin2, xmax2, bins=150)
-
-Return a 2d histogram of variables of columns c1 and c2 of df1.
-"""
-function ploth2d(df1, c1, c2, tx1, ty1, xmin1, xmax1, xmin2, xmax2, bins=150)
-    h1,p1 = hist2d(df1[!,c1],df1[!,c2], bins, tx1, ty1, xmin1, xmax1, xmin2, xmax2)
-    plot(p1, layout= (1, 1), legend=false, fmt = :png,
-        left_margin=5Plots.mm, right_margin=1Plots.mm, bottom_margin=5Plots.mm)
-end
-
-
-"""
-    profile(df1, c1, c2, tx1, ty1, bins=25)
-Return a profile histogram plot
-"""
-function profile(df1, c1, c2, tx1, ty1, bins=25)
-    pdf1 = p1df(df1[!,c1],df1[!,c2], bins)
-    p1 = plot(pdf1.x_mean,pdf1.y_mean, yerror=pdf1.y_std, shape = :circle, color = :black, legend=false)
-    xlabel!(tx1)
-    ylabel!(ty1)
-    plot(p1, layout= (1, 1), legend=false, fmt = :png,
         left_margin=5Plots.mm, right_margin=1Plots.mm, bottom_margin=5Plots.mm)
 end

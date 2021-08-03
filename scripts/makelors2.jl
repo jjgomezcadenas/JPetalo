@@ -3,7 +3,7 @@ using DrWatson
 @quickactivate "JPetalo"
 include("../src/JPetalo.jl")
 
-import .JPetalo: Dtsel, dtfirst, dtminimum, dtaverage, postrue, posreco
+import .JPetalo: Dtsel, dtfirst, dtminimum, dtaverage, postrue, posreco posrecall
 import .JPetalo: Possel, setunits, dftolor, write_lors_hdf5
 
 using DataFrames
@@ -16,7 +16,7 @@ logger = SimpleLogger(stdout, Logging.Warn)
 old_logger = global_logger(logger)
 
 dtselmap =Dict("first"=>dtfirst, "minimum"=>dtminimum, "average"=>dtaverage)
-posselmap =Dict("true"=>postrue, "reco"=>posreco)
+posselmap =Dict("true"=>postrue, "reco"=>posreco, "recall"=>posrecall)
 
 function makelors(args)
 

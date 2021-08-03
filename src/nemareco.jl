@@ -22,7 +22,6 @@ function recohits(event        ::Integer,
 				   total_charge::DataFrame,
 				   sensor_xyz  ::DataFrame,
 				   waveform    ::DataFrame,
-				   emin        ::Float32,
 				   qcut        ::Float32,
 				   pde         ::Float32,
 				   max_pes     ::Integer,
@@ -52,13 +51,6 @@ function recohits(event        ::Integer,
 	  end
 	end
 
-	# Total charge must be above threshold
-	q = sum(total_charge.charge)
-
-	@debug "total charge =  $q, emin = $emin"
-	if q < emin
-		return nothing
-	end
 
   	# select the waveform of this event
 	wfm = select_by_column_value(waveform, "event_id", event)
@@ -215,7 +207,7 @@ function nema_analysis!(event       ::Integer,
 	@debug "Primaries in event:" prim
 	#hit dataframe
 	hitdf = recohits(event, total_charge, sensor_xyz, waveform,
-					 2.0f0*dc.qmin, dc.ecut, dc.pde, dc.max_pes, dc.sigma_tof)
+					 dc.ecut, dc.pde, dc.max_pes, dc.sigma_tof)
 
 	if hitdf == nothing
 		@warn "Warning, hidtf evaluates to nothing for event = $event"

@@ -55,6 +55,7 @@ function recohits(event        ::Integer,
 	# Total charge must be above threshold
 	q = sum(total_charge.charge)
 
+	@debug "total charge =  $q, emin = $emin"
 	if q < emin
 		return nothing
 	end

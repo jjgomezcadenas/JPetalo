@@ -127,8 +127,13 @@ Computes the radial correction from barycenter
 """
 function radial_correction(xb::Vector{Float64}, yb::Vector{Float64},zb::Vector{Float64},
                             r::Vector{Float64}, rsipm=395.4)
-    r2 = r ./ rsipm   # redial correction
-    return r2 .* xb, r2 .* yb, zb
+    #r2 = r ./ rsipm   # redial correction
+    #return r2 .* xb, r2 .* yb, zb
+
+    ϕ = atan.(yb,xb)
+    x = r .* cos.(ϕ)
+    y = r .* sin.(ϕ)
+    return x,y,zb
 end
 
 

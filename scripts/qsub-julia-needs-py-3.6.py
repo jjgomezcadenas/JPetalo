@@ -10,7 +10,7 @@ import subprocess
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-p', '--program',
-                    default='makelors.jl',
+                    default='makenema.jl',
                     help='The Julia program to be executed')
 
 parser.add_argument('-d', '--dir-in',

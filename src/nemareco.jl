@@ -51,12 +51,24 @@ function recohits(event        ::Integer,
 		  end
 	  end
 	end
+    
+        #select the dataframe of total charge for this event
+	qdf = select_by_column_value(total_charge, "event_id", event)
+	if nrow(qdf) == 0
+		return nothing
+	end
+
+	@debug "total charge DF: size = $(size(qdf))"
+        @debug first(qdf, 5)
+    
+	# cut on total charge (> qcut)
+	qdfx   = qdf[qdf.charge .>qcut,:]
 
 	# Total charge must be above threshold
-	q = sum(total_charge.charge)
+	qtx = sum(qdfx.charge) * pde
 
-	@debug "total charge =  $q, emin = $emin"
-	if q < emin
+	@debug "total charge =  $qtx, emin = $emin"
+	if qtx < emin
 		return nothing
 	end
 
@@ -113,15 +125,7 @@ function recohits(event        ::Integer,
 	@debug "waveform after grouping SiPMs and sum charge: size = $(size(wtmq))"
 	@debug first(wtmq, 5)
 
-	#select the dataframe of total charge for this event
-	qdf = select_by_column_value(total_charge, "event_id", event)
-	if nrow(qdf) == 0
-		return nothing
-	end
-
-	@debug "total charge DF: size = $(size(qdf))"
-	@debug first(qdf, 5)
-
+	# IN qdf
 	# find SiPMs which have more than max_pes (max number stored in waveform)
 	qdf10 = select_by_column_value_gt(qdf, "charge", max_pes)
 
@@ -163,7 +167,7 @@ function recohits(event        ::Integer,
 					  trmin=qdft.trmin,
 					  q=qdft.q)
 
-	return xyzqt
+	return qtx, xyzqt
 end
 
 """
@@ -214,8 +218,8 @@ function nema_analysis!(event       ::Integer,
 	prim = select_by_column_value(primaries, "event_id", event)
 	@debug "Primaries in event:" prim
 	#hit dataframe
-	hitdf = recohits(event, total_charge, sensor_xyz, waveform,
-					 2.0f0*dc.qmin, dc.ecut, dc.pde, dc.max_pes, dc.sigma_tof)
+	qtx, hitdf = recohits(event, total_charge, sensor_xyz, waveform,
+					 0.0f0*dc.qmin, dc.ecut, dc.pde, dc.max_pes, dc.sigma_tof)
 
 	if hitdf == nothing
 		@warn "Warning, hidtf evaluates to nothing for event = $event"
@@ -228,7 +232,8 @@ function nema_analysis!(event       ::Integer,
 	end
 
 	@info " hit dataframe: size = $size(hitdf)"
-	@debug first(hitdf, 5)
+        @debug first(hitdf, 5)
+        @debug "total charge in event =$qtx"
 
 	# reconstruct (x,y) : barycenter
 	#b1, b2, hq1df, hq2df = lor_kmeans(hitdf)
@@ -303,8 +308,9 @@ function nema_analysis!(event       ::Integer,
 	htr1 = select_by_column_value(hq1df, "trmin", tr1)
 	htr2 = select_by_column_value(hq2df, "trmin", tr2)
 
-	# store data
+        # store data
 
+        push!(n3d["qtot"],qtx)
 	push!(n3d["xs"],prim.x[1])
 	push!(n3d["ys"],prim.y[1])
 	push!(n3d["zs"],prim.z[1])
@@ -402,7 +408,7 @@ function nemareco(files    ::Vector{String},
 
 	# define data dictionary
 
-	n3d = Dict("nsipm1"=>[0],"nsipm2"=>[0],
+	n3d = Dict("qtot"=>[0.0f0], "nsipm1"=>[0],"nsipm2"=>[0],
 			   "q1" =>[0.0f0],   "q2" =>[0.0f0],
 	           "r1"  =>[0.0f0],  "r2"  =>[0.0f0],
 			   "phistd1"=>[0.0f0],  "zstd1"=>[0.0f0],

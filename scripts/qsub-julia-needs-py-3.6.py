@@ -7,14 +7,23 @@ from glob import glob
 import subprocess
 
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--dir-in', help='Directory containing input files')
-parser.add_argument('-o', '--dir-out', help='Output directory')
-parser.add_argument('-n', '--number-of-jobs', type=int, help='Split work among N jobs', required=True)
-parser.add_argument('--phot', action="store_true", help='Use only pure photoelectric events')
 
-args = parser.parse_args()
+parser.add_argument('-p', '--program',
+                    default='makelors.jl',
+                    help='The Julia program to be executed')
+
+parser.add_argument('-d', '--dir-in',
+                    help='Directory containing input files')
+
+parser.add_argument('-o', '--dir-out',
+                    help='Output directory')
+
+parser.add_argument('-n', '--number-of-jobs', type=int,
+                    help='Split work among N jobs', required=True)
+
+args, other_args = parser.parse_known_args()
+other_args = ' '.join(other_args)
 
 n_files = len(glob(f'{args.dir_in}/*')) # Need python >= 3.6
 
@@ -40,7 +49,7 @@ template = """#!/bin/bash
 #cd $PBS_O_WORKDIR
 cd {launch_dir}
 
-/software/julia-1.6.1/bin/julia makenema.jl -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {phot}
+/software/julia-1.6.1/bin/julia {program} -d {dir_in} -o {dir_out} -x evtdf-{first:0{width}}-{last:0{width}}.csv -i {first} -l {last} {other_args}
 """
 
 output_directory = args.dir_out
@@ -55,14 +64,15 @@ os.chdir(join(output_directory, 'qsub'))
 for i, l in job_file_ranges:
     qsub_script_name = f'qsub-{i:0{width}}-{l:0{width}}.sh'
     qsub_script = template.format(first=i, last=l,
-                                  dir_in  = args.dir_
-                                  dir_out = output_directory,
-                                  phot    = '--phot' if args.phot else '',
-                                  launch_dir = launch_dir,
+                                  dir_in           = args.dir_in,
+                                  dir_out          = output_directory,
+                                  launch_dir       = launch_dir,
                                   basename_dir_out = basename(output_directory),
-                                  width   = width,
+                                  width            = width,
+                                  program          = args.program,
+                                  other_args       = other_args,
                                   )
     with open(qsub_script_name, 'w') as file:
         file.write(qsub_script)
     print(join(os.getcwd(), qsub_script_name))
-    subprocess.call(f'qsub {qsub_script_name}', shell=True)
+    subprocess.call(f'qsub -l mem=6gb -q long {qsub_script_name}', shell=True)

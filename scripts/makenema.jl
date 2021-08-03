@@ -84,7 +84,7 @@ function makenema(args)
 		max_pes = 10
 		ntof =5
 		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof)
-	else
+	elseif detconf == "pde_0.3_sigmatof_85ps_qcuts"
 		pde  = 0.3f0
 		sigma_tof = 0.085f0
 		ecut = 3.0f0
@@ -93,6 +93,16 @@ function makenema(args)
 		max_pes = 10
 		ntof =5
 		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof)
+	else                       # by default, 40 ps jitter  & 30 ps electronics = 50 ps
+		pde  = 0.3f0
+		sigma_tof = 0.050f0
+		ecut = 5.0f0           # increase ecut 
+		qmin = 1500.0f0
+		qmax = 3000.0f0
+		max_pes = 10
+		ntof =7                 # increase sipms for average
+		dconf = JPetalo.DetConf(pde, sigma_tof, ecut, qmin, qmax, max_pes, ntof)
+
 	end
 
 	println("makenema configuration")

@@ -3,6 +3,7 @@ using GLM
 using LsqFit
 using Distributions
 using StatsBase
+using Printf
 
 #linear fit wrapper
 
@@ -166,11 +167,12 @@ returns the fit and the plot
 function fitg1(x, xs, bins, xmin, xmax;
 	           xgmin, xgmax, fbins=100, norm=true, fm=0.0)
 
-	h, p = hist1d(x, xs, bins, xmin, xmax, norm=norm)
+	h, p = hist1d(x, xs, bins, xmin, xmax, norm=norm, legend=true)
     fg = fit_gauss_fm(x, xgmin, xgmax, bins=fbins, norm=norm, fm=fm)
 	gx = fg.g[1]
 	X = centers(h)
-    p = plot!(p, X, gx.(X), lw=2, legend=false)
+	lbl = @sprintf "σ =%4.1f " fg.std[1]
+    p = plot!(p, X, gx.(X), lw=2, label=lbl, legend=true)
 	xlabel!(xs)
 	return fg, p
 end
@@ -246,7 +248,7 @@ function fitg2(x, xs, bins, xmin, xmax;
 	           xg1min, xg1max, xg2min, xg2max, xgmin, xgmax, cm=0.0,
          	   g1bins=100, g2bins=100, gbins=100, norm=true)
 
-	hp, p = hist1d(x, xs, bins, xmin, xmax, norm=norm)
+	hp, p = hist1d(x, xs, bins, xmin, xmax, norm=norm, legend=true)
 
     g1p = (xmin = xg1min, xmax = xg1max, nbin=g1bins)
     g2p = (xmin= xg2min, xmax=  xg2max, nbin=g2bins)
@@ -257,9 +259,12 @@ function fitg2(x, xs, bins, xmin, xmax;
 	gx1 = fg.g[2]
 	gx2 = fg.g[3]
 
-    p = plot!(p,fg.X, fg.Y, lw=2)
-    p = plot!(p,fg.X, gx1.(fg.X), lw=1)
-    p = plot!(p,fg.X, gx2.(fg.X), lw=1)
+	lbl = @sprintf "σt =%4.1f mm, σ =%4.1f mm" fg.std[1] fg.std[2]
+	st  = @sprintf "σt =%4.1f mm " fg.std[1]
+	sf  = @sprintf "σ  =%4.1f mm" fg.std[2]
+    p = plot!(p,fg.X, fg.Y, label=lbl, lw=2)
+    p = plot!(p,fg.X, gx1.(fg.X), label=st, lw=1)
+    p = plot!(p,fg.X, gx2.(fg.X), label=sf, lw=1)
     #xlabel!(xs)
     return fg, p
 end

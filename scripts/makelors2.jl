@@ -3,7 +3,7 @@ using DrWatson
 @quickactivate "JPetalo"
 include("../src/JPetalo.jl")
 
-import .JPetalo: Dtsel, dtfirst, dtminimum, dtaverage, postrue, posreco posrecall
+import .JPetalo: Dtsel, dtfirst, dtminimum, dtaverage, postrue, posreco, posrecall
 import .JPetalo: Possel, setunits, dftolor, write_lors_hdf5
 
 using DataFrames

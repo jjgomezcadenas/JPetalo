@@ -39,20 +39,23 @@ end
 
 function hist1d(x::Vector{T}, xs::String, nbins::Integer,
                 xmin::T=bign, xmax::T=bigp;
-                norm=false, datap = true, markersize=3, fwl=false) where T
+                norm=false, datap = true, markersize=3, fwl=false,
+                label="", legend=false) where T
 
     return hist1d(hist1d(x, nbins, xmin, xmax, norm), xs,
-                         datap=datap, markersize=markersize, fwl=fwl)
+                         datap=datap, markersize=markersize, fwl=fwl,
+                         label=label, legend=legend)
 end
 
-function hist1d(h::Histogram, xs::String; datap=true, markersize=3, fwl=false)
+function hist1d(h::Histogram, xs::String; datap=true, markersize=3, fwl=false,
+                label="", legend=false)
 
     if datap
         yg = h.weights * 1.0
         xg = centers(h)
-        p = scatter(xg,yg, yerr = sqrt.(yg), markersize=markersize, legend=false)
+        p = scatter(xg,yg, yerr = sqrt.(yg), markersize=markersize, label=label, legend=legend)
         if fwl
-            p = plot!(p, xg,yg, yerr = sqrt.(yg), linewidth=1, legend=false)
+            p = plot!(p, xg,yg, yerr = sqrt.(yg), linewidth=1, label=label, legend=legend)
         end
     else
         p = plot(h, xlabel=xl, yl="frequency")
@@ -84,37 +87,6 @@ function hist1d(h1::Histogram, h2::Histogram, xs::String; markersize=2, norm=fal
 end
 
 
-# function ghist1d(x, nbins, xmin=bign, xmax=bigp)
-#     xx = in_range(x, xmin, xmax)
-#     h = fit(Histogram, xx, nbins=nbins)
-#     return h
-# end
-# function g2hist1d(x, xl, nbins, xmin=bign, xmax=bigp)
-#     h = ghist1d(x, nbins, xmin, xmax)
-#     p = plot(h, xlabel=xl, yl="frequency")
-#     return h, p
-# end
-# hist1d(x::Vector{Float64}, nbins::Integer,
-#        xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
-# hist1d(x::Vector{Float64}, xl::String, nbins::Integer,
-#       xmin::Float64=bign, xmax::Float64=bigp) = g2hist1d(x, xl, nbins, xmin, xmax)
-#
-# hist1d(x::Vector{Float32}, nbins::Integer,
-#        xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = ghist1d(x, nbins, xmin, xmax)
-# hist1d(x::Vector{Float32}, xl::String, nbins::Integer,
-#       xmin::Float32=Float32(bign), xmax::Float32=Float32(bigp)) = g2hist1d(x, xl, nbins, xmin, xmax)
-#
-# hist1d(x::Vector{Float32}, nbins::Integer,
-#        xmin::Float64=bign, xmax::Float64=bigp) = ghist1d(x, nbins, xmin, xmax)
-# hist1d(x::Vector{Float32}, xl::String, nbins::Integer,
-#       xmin::Float64=bign, xmax::Float64=bigp) = g2hist1d(x, xl, nbins, xmin, xmax)
-#
-# hist1d(x::Vector{Int64}, nbins::Int64,
-#        xmin::Int64=-1000000000, xmax::Int64=1000000000) = ghist1d(x, nbins, xmin, xmax)
-# hist1d(x::Vector{Int64}, xl::String, nbins::Int64,
-#       xmin::Int64=-1000000000, xmax::Int64=1000000000) = g2hist1d(x, xl, nbins, xmin, xmax)
-
-
 """
     hist2d(x,y, nbins, xl, yl)
 
@@ -122,7 +94,8 @@ return a 2d histogram and its corresponding graphics (plots)
 """
 function hist2d(x::Vector{T},y::Vector{T}, nbins::Integer,
                 xl::String, yl::String,
-                xmin::T=bign, xmax::T=bigp,ymin::T=bign, ymax::T=bigp) where T
+                xmin::T=bign, xmax::T=bigp,
+                ymin::T=bign, ymax::T=bigp; title="") where T
     function xy(i)
         return diff(h.edges[i])/2 .+ h.edges[i][1:end-1]
     end
@@ -137,6 +110,9 @@ function hist2d(x::Vector{T},y::Vector{T}, nbins::Integer,
     hm = heatmap(xe, ye, h.weights)
     xlabel!(xl)
     ylabel!(yl)
+    if title != ""
+        title!(title)
+    end
     return h,hm
 end
 
